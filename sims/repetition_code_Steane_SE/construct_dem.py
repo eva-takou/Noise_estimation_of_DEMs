@@ -5,9 +5,16 @@ import pymatching
 from pymatching import Matching
 
 
-#OK
-def get_initial_state(anc_qubits):
+def get_initial_state(anc_qubits: list):
+    '''Get initial state for ancilla qubits of all 0s.
+    
+    Input:
+        anc_qubits: a list of the ancilla qubit names
+    
+    Output:
+        initial_state: an xarray of length # of anc qubits
 
+    '''
     #Initial ancilla state
     initial_state = np.zeros(len(anc_qubits), dtype=int)
     initial_state = initial_state==True
@@ -15,10 +22,20 @@ def get_initial_state(anc_qubits):
     
     return initial_state
 
-#OK
-def project_data_meas(data_meas, num_shots,num_rounds,d,anc_qubits):
 
-    shots = np.arange(num_shots) 
+def project_data_meas(data_meas,num_rounds: int,anc_qubits: list):
+    '''Project the last data qubit measurement onto stabilizer values.
+    
+    Input: 
+        data_meas: measurement data obtained from stim (# of shots x num of data qubits)
+        num_rounds: # of QEC rounds
+        anc_qubits: list of names of anc_qubits
+    Output:
+        syndrome_proj: syndrome projection (xarray of dims # of shots x # of anc_qubits)
+    '''
+
+    num_shots = np.shape(data_meas)[0]
+    shots     = np.arange(num_shots) 
     
     syndrome_proj = data_meas.data[:,:-1] ^ data_meas.data[:,1:]  #dims: # of shots x # of ancilla
     #the 0th and 1st entries are xored, to give the 1st ancilla measurement equivalent
@@ -33,36 +50,39 @@ def project_data_meas(data_meas, num_shots,num_rounds,d,anc_qubits):
     return syndrome_proj
 
 
-#I have ommitted the flag qubit for any distance. Need to add it back and repeat the procedure.
-def get_defects_matrix(distance,num_rounds,num_shots,circuit):
+def get_defects_matrix(distance: int,num_rounds: int,num_shots: int,circuit: stim.Circuit):
+    '''Construct the defects matrix given the detection outcomes of the repetition code
+    under Steane style syndrome extraction.
+    Input:
+        distance:   distance of the code
+        num_rounds: # of QEC rounds
+        num_shots:  # of shots to sample the circuit
+        circuit: the stim circuit
+    Output:
+        defects_matrix: the detector matrix of dimensions (# of shots x # of QEC rounds +1 x # of detectors per round)
 
-    #Need to have a tracking system: if the ancilla meas is '1'
+    '''
+    
     d             = distance    
     data_qubits   = np.arange(0,d).tolist()
     anc_qubits    = (np.arange(d)+d).tolist()        
-    SHOTS      = np.arange(num_shots)
-    QEC_ROUNDS = np.arange(num_rounds)
+    SHOTS         = np.arange(num_shots)
+    QEC_ROUNDS    = np.arange(num_rounds)
 
     sampler   = circuit.compile_sampler()
     samples   = sampler.sample(shots=num_shots)
 
     NUM_ANC = len(anc_qubits)
+    NN      = NUM_ANC*num_rounds
 
-    anc_qubit_samples  = samples[:,:NUM_ANC*num_rounds]
-    data_qubit_samples = samples[:,NUM_ANC*num_rounds:]
+    anc_qubit_samples  = samples[:,:NN]
+    data_qubit_samples = samples[:,NN:]
     anc_qubit_samples  = anc_qubit_samples.reshape(num_shots,num_rounds,NUM_ANC) 
 
-    #This is because 2 consecutive ancilla measurements create the syndrome
+    #2 consecutive ancilla measurements create the syndrome
     anc_qubit_samples = anc_qubit_samples[:,:,:-1] ^ anc_qubit_samples[:,:,1:]
 
-    # for k in range(num_shots):
-
-    #     print(samples[k,:])
-    #     print(anc_qubit_samples[k,0,:])
-    #     print("----")
-
-
-    #Now redefine the anc qubits as detectors
+    #Now redefine the anc qubits as detectors:
     anc_qubits    = (np.arange(d-1)+d).tolist()      
 
     anc_meas = xr.DataArray(data = anc_qubit_samples, 
@@ -76,111 +96,73 @@ def get_defects_matrix(distance,num_rounds,num_shots,circuit):
 
     initial_state = get_initial_state(anc_qubits)
 
-    syndrome_proj                     = project_data_meas(data_meas,num_shots,num_rounds,d,anc_qubits)
+    syndrome_proj                     = project_data_meas(data_meas,num_rounds,anc_qubits)
     syndromes                         = xr.concat([anc_meas,syndrome_proj],"qec_round")
 
-    # print("-------------Syndromes for 0th rd:")
-    # for k in range(num_shots):
-    #     print(syndromes.data[k,0,:])
-    #     print('-----')
-    # print("-------------Syndromes for 1st rd:")
-    # for k in range(num_shots):
-    #     print(syndromes.data[k,1,:])
-    #     print('-----')
 
-    # syndromes                         = xr.concat([anc_meas,syndrome_proj],"qec_round")
     syndrome_matrix_copy              = syndromes.copy()
     syndrome_matrix_copy.data[:,-1,:] = initial_state
     defects_matrix                    = syndromes ^ syndrome_matrix_copy.roll(qec_round=1)
-
-    # print("-------------Defects for 0th rd:")
-
-    # for k in range(num_shots):
-    #     print(defects_matrix.data[k,0,:])
-
-    # print("-------------Defects for 1st rd:")
-
-    # for k in range(num_shots):
-    #     print(defects_matrix.data[k,1,:])
-
 
     return defects_matrix
 
 
-#Consider also the flag qubit here: 1st measurement in 1st round only is the flag
-def get_defects_matrix_w_Flag(distance,num_rounds,num_shots,circuit):
 
-    #Need to have a tracking system: if the ancilla meas is '1'
-    d             = distance    
-    data_qubits   = np.arange(0,d).tolist()
-    anc_qubits    = (np.arange(d)+d).tolist()  
-    # flag_qubit    = [anc_qubits[-1]+1]  #Consider a flag qubit too.
-    SHOTS         = np.arange(num_shots)
-    QEC_ROUNDS    = np.arange(num_rounds)
-
-    sampler       = circuit.compile_sampler()
-    samples       = sampler.sample(shots=num_shots)
-    NUM_ANC       = len(anc_qubits)
-
-
-    flag_samples       = samples[:,0]
-    samples            = samples[:,1:]
-    anc_qubit_samples  = samples[:,:NUM_ANC*num_rounds]
-    data_qubit_samples = samples[:,NUM_ANC*num_rounds:]
-
-
-    if np.shape(data_qubit_samples)[1]!=len(data_qubits):
-        print("# of data qubits:",np.shape(data_qubit_samples)[1])
-        raise Exception("Error in the assignment of data samples")
+def construct_dem(pij_bulk: dict,pij_bd: dict,pij_time: dict,p4_cnts: dict):
+    '''Contruct the detector error model given the estimated values of error probabilities.
     
-    if (np.shape(anc_qubit_samples)[1])   !=len(anc_qubits)*num_rounds:
-        print("# of anc qubits:",np.shape(anc_qubit_samples)[1])
-        raise Exception("Error in the assignment of anc samples")
+    Input:
+        pij_bulk: dictionary with keys the detector names of space-bulk errors and values the error probabilities
+        pij_bd: dictionary with keys the detector names of boundary errors and values the error probabilities
+        pij_time: dictionary with keys the detector names of time errors and values the error probabilities
+        p4_cnts: dictionary with keys the detector names of 4-point errors and values the error probabilities
 
-    #Keep only samples where flag=0
-    locs_no_error = np.where(flag_samples==0)[0]
+    Output:
+        reconstructed_DEM: our estimated detector error model
+    '''
+    reconstructed_DEM = stim.DetectorErrorModel()
+
+    for key in pij_bulk.keys():
+        det_list = []
+        for det in key:
+            ind = int(det[1:])
+            det_list.append(stim.target_relative_detector_id(ind))
+        
+        det_list.append(stim.target_logical_observable_id(0))
+
+        reconstructed_DEM.append("error",pij_bulk[key],det_list)
+
+    for key in pij_bd.keys():
+        
+        det_list=[]
+        ind = int(key[1:])
+        det_list.append(stim.target_relative_detector_id(ind))
+        det_list.append(stim.target_logical_observable_id(0))
+
+        reconstructed_DEM.append("error",pij_bd[key],det_list)
+
+    for key in pij_time.keys():
+        det_list = []
+        for det in key:
+            ind = int(det[1:])
+            det_list.append(stim.target_relative_detector_id(ind))
+        
+        reconstructed_DEM.append("error",pij_time[key],det_list)
     
-    anc_qubit_samples  = anc_qubit_samples[locs_no_error,:]
-    data_qubit_samples = data_qubit_samples[locs_no_error,:]
+    for key in p4_cnts.keys():
+        det_list=[]
+        for det in key:
+            ind=int(det[1:])
+            det_list.append(stim.target_relative_detector_id(ind))
+        
+        reconstructed_DEM.append("error",p4_cnts[key],det_list)
 
-    print("Old # of shots: ",num_shots)
-    # num_shots = len(locs_no_error)
-    num_shots = np.shape(anc_qubit_samples)[0]
-    SHOTS     = np.arange(num_shots)
-    print("New # of shots: ",num_shots)
-
-
-    anc_qubit_samples  = anc_qubit_samples.reshape(num_shots,num_rounds,NUM_ANC) 
-
-    #This is because 2 consecutive ancilla measurements create the syndrome
-    anc_qubit_samples = anc_qubit_samples[:,:,:-1] ^ anc_qubit_samples[:,:,1:]
-
-
-    #Now redefine the anc qubits as detectors
-    anc_qubits    = (np.arange(d-1)+d).tolist()      
-
-    anc_meas = xr.DataArray(data = anc_qubit_samples, 
-                        dims=["shot","qec_round","anc_qubit"],
-                        coords = dict(shot=SHOTS,qec_round=QEC_ROUNDS,anc_qubit=anc_qubits),)
-
-
-    data_meas = xr.DataArray(data=data_qubit_samples, 
-                        dims=["shot","data_qubits"],
-                        coords = dict(shot=SHOTS,data_qubits=data_qubits))    
-
-    initial_state = get_initial_state(anc_qubits)
-
-    syndrome_proj                     = project_data_meas(data_meas,num_shots,num_rounds,d,anc_qubits)
-    syndromes                         = xr.concat([anc_meas,syndrome_proj],"qec_round")
-
-    syndrome_matrix_copy              = syndromes.copy()
-    syndrome_matrix_copy.data[:,-1,:] = initial_state
-    defects_matrix                    = syndromes ^ syndrome_matrix_copy.roll(qec_round=1)
+    return reconstructed_DEM
 
 
 
-    return defects_matrix,num_shots
 
+#----------- Need to fix those below----------
 
 #Consider also the flag qubit here: 1st measurement in every round is the flag.
 def get_defects_matrix_w_Flag(distance,num_rounds,num_shots,circuit):
@@ -261,50 +243,79 @@ def get_defects_matrix_w_Flag(distance,num_rounds,num_shots,circuit):
     return defects_matrix,num_shots
 
 
-def construct_dem(pij_bulk,pij_bd,pij_time,p4_cnts):
+#Consider also the flag qubit here: 1st measurement in 1st round only is the flag
+def get_defects_matrix_w_Flag(distance,num_rounds,num_shots,circuit):
 
-    my_DEM = stim.DetectorErrorModel()
+    #Need to have a tracking system: if the ancilla meas is '1'
+    d             = distance    
+    data_qubits   = np.arange(0,d).tolist()
+    anc_qubits    = (np.arange(d)+d).tolist()  
+    # flag_qubit    = [anc_qubits[-1]+1]  #Consider a flag qubit too.
+    SHOTS         = np.arange(num_shots)
+    QEC_ROUNDS    = np.arange(num_rounds)
 
-    for key in pij_bulk.keys():
-        det_list = []
-        for det in key:
-            ind = int(det[1:])
-            det_list.append(stim.target_relative_detector_id(ind))
-        
-        det_list.append(stim.target_logical_observable_id(0))
+    sampler       = circuit.compile_sampler()
+    samples       = sampler.sample(shots=num_shots)
+    NUM_ANC       = len(anc_qubits)
 
-        my_DEM.append("error",pij_bulk[key],det_list)
 
-    for key in pij_bd.keys():
-        
-        det_list=[]
-        ind = int(key[1:])
-        det_list.append(stim.target_relative_detector_id(ind))
-        det_list.append(stim.target_logical_observable_id(0))
+    flag_samples       = samples[:,0]
+    samples            = samples[:,1:]
+    anc_qubit_samples  = samples[:,:NUM_ANC*num_rounds]
+    data_qubit_samples = samples[:,NUM_ANC*num_rounds:]
 
-        my_DEM.append("error",pij_bd[key],det_list)
 
-    for key in pij_time.keys():
-        det_list = []
-        for det in key:
-            ind = int(det[1:])
-            det_list.append(stim.target_relative_detector_id(ind))
-        
-        my_DEM.append("error",pij_time[key],det_list)
+    if np.shape(data_qubit_samples)[1]!=len(data_qubits):
+        print("# of data qubits:",np.shape(data_qubit_samples)[1])
+        raise Exception("Error in the assignment of data samples")
     
-    for key in p4_cnts.keys():
-        det_list=[]
-        for det in key:
-            ind=int(det[1:])
-            det_list.append(stim.target_relative_detector_id(ind))
-        
-        my_DEM.append("error",p4_cnts[key],det_list)
+    if (np.shape(anc_qubit_samples)[1])   !=len(anc_qubits)*num_rounds:
+        print("# of anc qubits:",np.shape(anc_qubit_samples)[1])
+        raise Exception("Error in the assignment of anc samples")
 
-    return my_DEM
+    #Keep only samples where flag=0
+    locs_no_error = np.where(flag_samples==0)[0]
+    
+    anc_qubit_samples  = anc_qubit_samples[locs_no_error,:]
+    data_qubit_samples = data_qubit_samples[locs_no_error,:]
+
+    print("Old # of shots: ",num_shots)
+    # num_shots = len(locs_no_error)
+    num_shots = np.shape(anc_qubit_samples)[0]
+    SHOTS     = np.arange(num_shots)
+    print("New # of shots: ",num_shots)
+
+
+    anc_qubit_samples  = anc_qubit_samples.reshape(num_shots,num_rounds,NUM_ANC) 
+
+    #This is because 2 consecutive ancilla measurements create the syndrome
+    anc_qubit_samples = anc_qubit_samples[:,:,:-1] ^ anc_qubit_samples[:,:,1:]
+
+
+    #Now redefine the anc qubits as detectors
+    anc_qubits    = (np.arange(d-1)+d).tolist()      
+
+    anc_meas = xr.DataArray(data = anc_qubit_samples, 
+                        dims=["shot","qec_round","anc_qubit"],
+                        coords = dict(shot=SHOTS,qec_round=QEC_ROUNDS,anc_qubit=anc_qubits),)
+
+
+    data_meas = xr.DataArray(data=data_qubit_samples, 
+                        dims=["shot","data_qubits"],
+                        coords = dict(shot=SHOTS,data_qubits=data_qubits))    
+
+    initial_state = get_initial_state(anc_qubits)
+
+    syndrome_proj                     = project_data_meas(data_meas,num_shots,num_rounds,d,anc_qubits)
+    syndromes                         = xr.concat([anc_meas,syndrome_proj],"qec_round")
+
+    syndrome_matrix_copy              = syndromes.copy()
+    syndrome_matrix_copy.data[:,-1,:] = initial_state
+    defects_matrix                    = syndromes ^ syndrome_matrix_copy.roll(qec_round=1)
 
 
 
-
+    return defects_matrix,num_shots
 
 
 def decode_both_dems_V2_w_post_selection(my_DEM:stim.DetectorErrorModel,circuit:stim.Circuit,num_shots:int):
