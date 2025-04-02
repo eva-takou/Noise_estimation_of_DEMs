@@ -134,14 +134,13 @@ def construct_dem(pij_bulk: dict,pij_bd: dict,pij_time: dict,p4_cnts: dict):
 
     for key in pij_bd.keys():
         
-        det_list=[]
-        ind = int(key[1:])
-        det_list.append(stim.target_relative_detector_id(ind))
-        det_list.append(stim.target_logical_observable_id(0))
+        ind      = int(key[1:])
+        det_list = [stim.target_relative_detector_id(ind),stim.target_logical_observable_id(0)]
 
         reconstructed_DEM.append("error",pij_bd[key],det_list)
 
     for key in pij_time.keys():
+        
         det_list = []
         for det in key:
             ind = int(det[1:])
