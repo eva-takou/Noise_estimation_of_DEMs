@@ -262,9 +262,9 @@ def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, vi_mean, vivj_mean
 
         for rd1 in range(num_rounds-1):
 
-            rd2 = rd1+1
-            v1  = vi_mean[rd1,anc]
-            v2  = vi_mean[rd2,anc]
+            rd2  = rd1+1
+            v1   = vi_mean[rd1,anc]
+            v2   = vi_mean[rd2,anc]
             v1v2 = vivj_mean[rd1,rd2,anc,anc]
 
             val = bulk_prob_formula(v1,v2,v1v2)
@@ -275,6 +275,8 @@ def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, vi_mean, vivj_mean
             pij_time[("D"+str(indx1),"D"+str(indx2))] = val
 
     return pij_time
+
+
 
 
 def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: int, vi_mean, vivj_mean, pij_time: dict):

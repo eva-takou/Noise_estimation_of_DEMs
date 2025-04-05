@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from SC import surface_code_star_stabs
+from surface_code_lattice import surface_code_star_stabs
 import stim
 
 
@@ -22,9 +22,10 @@ def get_measurement_data(samples, DATA_QUBITS: list, ANC_QUBITS: list, NUM_ROUND
 
     '''
     NUM_ANC = len(ANC_QUBITS)
+    NN      = NUM_ANC*NUM_ROUNDS
 
-    anc_qubit_samples  = samples[:,:NUM_ANC*NUM_ROUNDS]
-    data_qubit_samples = samples[:,NUM_ANC*NUM_ROUNDS:]
+    anc_qubit_samples  = samples[:,:NN]
+    data_qubit_samples = samples[:,NN:]
     anc_qubit_samples  = anc_qubit_samples.reshape(NUM_SHOTS,NUM_ROUNDS,NUM_ANC) 
     
     SHOTS      = np.arange(NUM_SHOTS)
@@ -45,8 +46,7 @@ def get_measurement_data(samples, DATA_QUBITS: list, ANC_QUBITS: list, NUM_ROUND
     return anc_meas, data_meas 
 
 
-def project_data_meas(data_qubit_samples, L: int, NUM_ROUNDS: int , 
-                                         NUM_SHOTS: int, ANC_QUBITS: list):
+def project_data_meas(data_qubit_samples, L: int, NUM_ROUNDS: int, NUM_SHOTS: int, ANC_QUBITS: list):
     '''Perform stabilizer reconstruction for the surface code, using the last data qubit measurements.
 
     Input: 
@@ -180,8 +180,7 @@ def surface_code_DEM(pij_bulk: dict,pij_bd: dict,pij_time: dict, stims_DEM: stim
 
     for key in pij_time.keys():
 
-        d0 = key[0]
-        d1 = key[1]
+        d0,d1 = key
 
         det_indx1 = int(d0[1:])
         det_indx2 = int(d1[1:])
@@ -193,8 +192,7 @@ def surface_code_DEM(pij_bulk: dict,pij_bd: dict,pij_time: dict, stims_DEM: stim
 
     for key in pij_bulk.keys():
 
-        d0 = key[0]
-        d1 = key[1]
+        d0,d1 = key
         det_indx1 = int(d0[1:])
         det_indx2 = int(d1[1:])
         logic = key[2]
