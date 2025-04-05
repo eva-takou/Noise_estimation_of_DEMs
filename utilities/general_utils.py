@@ -3,6 +3,10 @@ import stim
 import numpy as np
 import xarray as xr
 
+from numba import njit
+
+
+
 
 def stims_DEM_to_dictionary(DEM: stim.DetectorErrorModel):
     '''
@@ -54,30 +58,51 @@ def avg_vi(defect_matrix: xr.DataArray):
     
     return vi_mean
 
-def avg_vivj(defect_matrix: xr.DataArray):
-    '''
-    Get the <vivj> of detection events, across many runs of the circuit.
+# def avg_vivj(defect_matrix: xr.DataArray):
+#     '''
+#     Get the <vivj> of detection events, across many runs of the circuit.
 
-    Input:
-        defect_matrix: an xArray of dims # of shots x # of qec_rounds +1 x # of ancilla qubits.
+#     Input:
+#         defect_matrix: an xArray of dims # of shots x # of qec_rounds +1 x # of ancilla qubits.
 
-    Output:
-        avg_vivj: <vivj> array of dims # of qec rounds x # of qec rounds  x # of ancilla qubits x # of ancilla qubits.
+#     Output:
+#         avg_vivj: <vivj> array of dims # of qec rounds x # of qec rounds  x # of ancilla qubits x # of ancilla qubits.
     
-    '''
-    num_shots  = np.size(defect_matrix.data,axis=0)     
-    num_rounds = np.size(defect_matrix.data,axis=1)     
-    num_anc    = np.size(defect_matrix.data,axis=2)     
+#     '''
+#     num_shots  = np.size(defect_matrix.data,axis=0)     
+#     num_rounds = np.size(defect_matrix.data,axis=1)     
+#     num_anc    = np.size(defect_matrix.data,axis=2)     
 
-    avg_vivj =  np.zeros((num_rounds ** 2, num_anc **2))
+#     avg_vivj =  np.zeros((num_rounds ** 2, num_anc **2))
 
-    for shot in range(num_shots): 
-        avg_vivj += np.kron(defect_matrix.data[shot,:,:],defect_matrix.data[shot,:,:])
+#     for shot in range(num_shots): 
+#         avg_vivj += np.kron(defect_matrix.data[shot,:,:],defect_matrix.data[shot,:,:])
 
-    avg_vivj = avg_vivj/num_shots
-    avg_vivj = avg_vivj.reshape(num_rounds,num_rounds,num_anc,num_anc)
+#     avg_vivj = avg_vivj/num_shots
+#     avg_vivj = avg_vivj.reshape(num_rounds,num_rounds,num_anc,num_anc)
 
-    return avg_vivj 
+#     return avg_vivj 
+
+
+@njit
+def avg_vivj(defect_matrix_data):
+
+    num_shots, num_rounds, num_anc = defect_matrix_data.shape
+    
+    avg_vivj = np.zeros((num_rounds * num_rounds, num_anc * num_anc))
+
+    for shot in range(num_shots):
+        mat = defect_matrix_data[shot]
+        for i in range(num_rounds):
+            for j in range(num_rounds):
+                for k in range(num_anc):
+                    for l in range(num_anc):
+                        idx1 = i * num_rounds + j
+                        idx2 = k * num_anc + l
+                        avg_vivj[idx1, idx2] += mat[i, k] * mat[j, l]
+
+    avg_vivj /= num_shots
+    return avg_vivj.reshape((num_rounds, num_rounds, num_anc, num_anc))
 
 def bulk_prob_formula(v1: float,v2: float, v1v2:float):
     '''
