@@ -146,8 +146,7 @@ def extract_error_probs(defects_matrix):
 
     #Estimate the different probs: dictionaries where fields have the form ((rd1,rd2),(anc1,anc2))
     pij_time = estimate_time_edge_probs(num_rounds,num_ancilla, vi_mean,vivj_mean)
-    pij_bd   = estimate_data_edge_bd_probs(num_rounds,num_ancilla,vi_mean,vivj_mean,
-                                           include_spacetime_edges=True,dictionary_format=True)
+    pij_bd   = estimate_data_edge_bd_probs(num_rounds,num_ancilla,vi_mean,vivj_mean)
     
     pij_bulk = estimate_data_edge_bulk_probs_all(num_rounds,num_ancilla,vi_mean,vivj_mean)   
 
@@ -232,7 +231,6 @@ def construct_estimated_DEM(pij_time: dict, pij_bd: dict, pij_bulk: dict, space_
         targets.append(stim.target_logical_observable_id(0))
         
         reconstructed_DEM.append("error",pij_bulk[name],targets)
-
 
     for instruction in stims_DEM:
 
