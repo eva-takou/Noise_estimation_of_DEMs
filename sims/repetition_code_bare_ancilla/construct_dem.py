@@ -142,7 +142,7 @@ def extract_error_probs(defects_matrix):
     num_ancilla = np.shape(defects_matrix)[2]
 
     vi_mean   = avg_vi(defects_matrix)
-    vivj_mean = avg_vivj(defects_matrix)
+    vivj_mean = avg_vivj(defects_matrix.data)
 
     #Estimate the different probs: dictionaries where fields have the form ((rd1,rd2),(anc1,anc2))
     pij_time = estimate_time_edge_probs(num_rounds,num_ancilla, vi_mean,vivj_mean)
