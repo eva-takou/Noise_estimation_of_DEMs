@@ -1,8 +1,6 @@
-
 import stim
 import numpy as np
 import xarray as xr
-
 from numba import njit
 
 
@@ -58,35 +56,18 @@ def avg_vi(defect_matrix: xr.DataArray):
     
     return vi_mean
 
-# def avg_vivj(defect_matrix: xr.DataArray):
-#     '''
-#     Get the <vivj> of detection events, across many runs of the circuit.
-
-#     Input:
-#         defect_matrix: an xArray of dims # of shots x # of qec_rounds +1 x # of ancilla qubits.
-
-#     Output:
-#         avg_vivj: <vivj> array of dims # of qec rounds x # of qec rounds  x # of ancilla qubits x # of ancilla qubits.
-    
-#     '''
-#     num_shots  = np.size(defect_matrix.data,axis=0)     
-#     num_rounds = np.size(defect_matrix.data,axis=1)     
-#     num_anc    = np.size(defect_matrix.data,axis=2)     
-
-#     avg_vivj =  np.zeros((num_rounds ** 2, num_anc **2))
-
-#     for shot in range(num_shots): 
-#         avg_vivj += np.kron(defect_matrix.data[shot,:,:],defect_matrix.data[shot,:,:])
-
-#     avg_vivj = avg_vivj/num_shots
-#     avg_vivj = avg_vivj.reshape(num_rounds,num_rounds,num_anc,num_anc)
-
-#     return avg_vivj 
-
-
 @njit
 def avg_vivj(defect_matrix_data):
+    '''
+    Get the <vivj> of detection events, across many runs of the circuit.
 
+    Input:
+        defect_matrix: an xArray of dims # of shots x # of qec_rounds +1 x # of ancilla qubits.
+
+    Output:
+        avg_vivj: <vivj> array of dims # of qec rounds x # of qec rounds  x # of ancilla qubits x # of ancilla qubits. 
+    '''
+   
     num_shots, num_rounds, num_anc = defect_matrix_data.shape
     
     avg_vivj = np.zeros((num_rounds * num_rounds, num_anc * num_anc))
