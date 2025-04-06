@@ -188,13 +188,12 @@ def first_diag_errors_DEM(distance,num_rounds):
 
     for anc1 in range(L,num_ancilla):#range(L,num_ancilla):  #only L through 2L will lead to L0
 
+        anc2  = anc1-(L)
+
         for rd1 in range(num_rounds-1):
 
             indx1 = anc1 + num_ancilla * rd1
-
-            rd2 = rd1+1
-
-            anc2  = anc1-(L)
+            rd2   = rd1+1
             indx2 = anc2 + num_ancilla * rd2
 
             detector_pairs.append((indx1,indx2))
@@ -272,7 +271,7 @@ def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, vi_mean, vivj_mean
             indx1 = anc + num_ancilla * rd1
             indx2 = anc + num_ancilla * rd2 
 
-            pij_time[("D"+str(indx1),"D"+str(indx2))] = val
+            pij_time[(f"D{indx1}",f"D{indx2}")] = val
 
     return pij_time
 
@@ -317,8 +316,8 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
             v2   = vi_mean[rd2,anc2]
 
 
-            det_indx1 = "D"+str(indx1)
-            det_indx2 = "D"+str(indx2)
+            det_indx1 = f"D{indx1}"
+            det_indx2 = f"D{indx2}"
 
 
             if (indx1,indx2) in logical_inds:
@@ -342,8 +341,8 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
         indx1 = min([INDX1,INDX2])
         indx2 = max([INDX1,INDX2])
 
-        det_indx1 = "D"+str(indx1)
-        det_indx2 = "D"+str(indx2)
+        det_indx1 = f"D{indx1}"
+        det_indx2 = f"D{indx2}"
 
         v1v2 = vivj_mean[rd1,rd2,anc1,anc2]
         v1   = vi_mean[rd1,anc1]
@@ -366,8 +365,8 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
         indx1 = min([INDX1,INDX2])
         indx2 = max([INDX1,INDX2])
 
-        det_indx1 = "D"+str(indx1)
-        det_indx2 = "D"+str(indx2)
+        det_indx1 = f"D{indx1}"
+        det_indx2 = f"D{indx2}"
 
         
         v1v2 = vivj_mean[rd1,rd2,anc1,anc2]
@@ -390,18 +389,18 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
             DENOM      = 1
             num_of_det = anc + num_ancilla * rd1
 
-            det_indx1 = "D" + str(num_of_det)
+            det_indx1 = f"D{num_of_det}"
 
             v0        = vi_mean[rd1,anc]
             NUMER     = v0-1/2
 
             #Get nearest time-edges:
             if (anc + num_ancilla * (rd1+1))<=max_det_indx:#anc+num_ancilla<=max_det_indx and num_of_det!=anc+num_ancilla:
-                p1     = pij_time[(det_indx1,"D"+str(anc + num_ancilla * (rd1+1)))]
+                p1     = pij_time[(det_indx1,f"D{anc + num_ancilla * (rd1+1)}")]
                 DENOM *= 1-2*p1
 
             if (anc + num_ancilla * (rd1-1))>=0 and num_of_det!=anc-num_ancilla:
-                p1     = pij_time[("D"+str(anc + num_ancilla * (rd1-1)),det_indx1)]
+                p1     = pij_time[(f"D{anc + num_ancilla * (rd1-1)}",det_indx1)]
                 DENOM *= 1-2*p1
 
             #Get nearest bulk space edge (not diagonal)
@@ -411,7 +410,7 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
             for anc2 in neighbors:
                 
                 num_of_det2 = anc2 + num_ancilla*rd1
-                det_indx2   = "D"+str(num_of_det2)
+                det_indx2   = f"D{num_of_det2}"
                 
                 for KEY in pij_bulk.keys():
 
@@ -435,14 +434,14 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
                     
                     indx0      = min([INDX1,num_of_det])
                     indx_other = max([INDX1,num_of_det])
-                    p1         = pij_bulk[("D"+str(indx0),"D"+str(indx_other),"")]
+                    p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","")]
                     DENOM *= 1-2*p1
 
                 elif INDX1 == num_of_det:
 
                     indx0      = min([INDX0,num_of_det])
                     indx_other = max([INDX0,num_of_det])
-                    p1         = pij_bulk[("D"+str(indx0),"D"+str(indx_other),"")]
+                    p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","")]
                     DENOM *= 1-2*p1
 
             
@@ -458,11 +457,11 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
                     indx0      = min([INDX1,num_of_det])
                     indx_other = max([INDX1,num_of_det])
 
-                    if ("D"+str(indx0),"D"+str(indx_other),"L0") in pij_bulk.keys():
+                    if (f"D{indx0}",f"D{indx_other}","L0") in pij_bulk.keys():
 
-                        p1         = pij_bulk[("D"+str(indx0),"D"+str(indx_other),"L0")]
+                        p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","L0")]
                     else:
-                        p1         = pij_bulk[("D"+str(indx0),"D"+str(indx_other),"")]
+                        p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","")]
                     
                     DENOM *= 1-2*p1
 
@@ -471,10 +470,10 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
                     indx0      = min([INDX0,num_of_det])
                     indx_other = max([INDX0,num_of_det])
 
-                    if ("D"+str(indx0),"D"+str(indx_other),"L0") in pij_bulk.keys():
-                        p1         = pij_bulk[("D"+str(indx0),"D"+str(indx_other),"L0")]
+                    if (f"D{indx0}",f"D{indx_other}","L0") in pij_bulk.keys():
+                        p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","L0")]
                     else:
-                        p1         = pij_bulk[("D"+str(indx0),"D"+str(indx_other),"")]
+                        p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","")]
                     DENOM *= 1-2*p1
             
 
