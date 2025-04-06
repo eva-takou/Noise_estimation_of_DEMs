@@ -15,9 +15,10 @@ def edge_dicts(num_ancilla: int,num_rounds: int):
     '''
 
 
-    bulk_edges = {}
-    time_edges = {}
-    bd_edges   = {}
+    bulk_edges = set()
+    time_edges = set()
+    bd_edges   = set()
+
     #Time edges
     for rd1 in range(num_rounds):
         rd2=rd1+1
@@ -27,9 +28,9 @@ def edge_dicts(num_ancilla: int,num_rounds: int):
             indx1 = anc1+num_ancilla*rd1
             indx2 = anc2+num_ancilla*rd2
 
-            name = ("D"+str(indx1),"D"+str(indx2))
+            name = (f"D{indx1}",f"D{indx2}")
 
-            time_edges[name]=0
+            time_edges.add(name)
     
     #Space edges
     for rd1 in range(num_rounds+1):
@@ -39,21 +40,21 @@ def edge_dicts(num_ancilla: int,num_rounds: int):
 
             indx1 = anc1+num_ancilla*rd1
             indx2 = anc2+num_ancilla*rd2
-            name = ("D"+str(indx1),"D"+str(indx2))
-            bulk_edges[name]=0
+            name = (f"D{indx1}",f"D{indx2}")
+
+            bulk_edges.add(name)
     
     for rd1 in range(num_rounds+1):
 
         anc1 = 0
         
         indx1 = anc1+num_ancilla*rd1
-        name  = ("D"+str(indx1))
-        bd_edges[name]=0
+        name  = (f"D{indx1}")
+        bd_edges.add(name)
 
         anc1  = num_ancilla-1
         indx1 = anc1+num_ancilla*rd1
-        name  = ("D"+str(indx1))
-        
-        bd_edges[name]=0
+        name  = (f"D{indx1}")
+        bd_edges.add(name)
 
     return bulk_edges,time_edges,bd_edges
