@@ -1,17 +1,11 @@
 import numpy as np
-import xarray as xr
-import pymatching
-from pymatching import Matching
-import stim
 from scipy.optimize import minimize,least_squares
-
-import sympy as sym
 from sympy import symbols
-import itertools
 from itertools import combinations
 
 
-def get_4_pnt_events(defect_matrix,p_depol_after):
+
+def get_4_pnt_events(defect_data,p_depol_after):
     '''
     Collect the <v_{ijkl}> for all possible 4 point events in the detector error model.
     The 4-pnt events consist of 2 consecutive detectors in the same round, and the same 2 detectors shifted by one round.
@@ -23,10 +17,11 @@ def get_4_pnt_events(defect_matrix,p_depol_after):
     Output: 
         p4_cnts: dictionary with keys the events of the form ("Di","Dj","Dk","Dl") and values the average # of times where all 4 detectors fire together.
     '''
-    num_shots    = np.size(defect_matrix.data,axis=0)     
-    num_rounds   = np.size(defect_matrix.data,axis=1)     
-    num_anc      = np.size(defect_matrix.data,axis=2)     
 
+
+    num_shots    = np.size(defect_data,axis=0)     
+    num_rounds   = np.size(defect_data,axis=1)     
+    num_anc      = np.size(defect_data,axis=2)     
 
     p4_cnts = {}
 
@@ -42,29 +37,21 @@ def get_4_pnt_events(defect_matrix,p_depol_after):
             round3 = round1+1
             round4 = round3
 
-            locs1 = np.nonzero(defect_matrix.data[:,round1,anc1])[0]
-            locs2 = np.nonzero(defect_matrix.data[:,round2,anc2])[0]
-            locs3 = np.nonzero(defect_matrix.data[:,round3,anc3])[0]
-            locs4 = np.nonzero(defect_matrix.data[:,round4,anc4])[0]
+            locs = defect_data[:,round1,anc1] & defect_data[:,round2,anc2]\
+                 & defect_data[:,round3,anc3] & defect_data[:,round4,anc4]
 
-            locs1 = set(locs1)
-            locs2 = set(locs2)
-            locs3 = set(locs3)
-            locs4 = set(locs4)
 
-            locs  = locs1 & locs2 & locs3 & locs4 #all should be nnz for the same shot
-            
             #Indices are sorted
             indx1 = anc1+num_anc*round1
             indx2 = anc2+num_anc*round2
             indx3 = anc3+num_anc*round3
             indx4 = anc4+num_anc*round4
 
-            # inds = np.sort([indx1,indx2,indx3,indx4])
+            # name_of_4_pnt_event = ("D"+str(indx1),"D"+str(indx2),"D"+str(indx3),"D"+str(indx4))
 
-            name_of_4_pnt_event = ("D"+str(indx1),"D"+str(indx2),"D"+str(indx3),"D"+str(indx4))
+            name_of_4_pnt_event = (f"D{indx1}",f"D{indx2}",f"D{indx3}",f"D{indx4}")
             
-            p4_cnts[name_of_4_pnt_event]=len(locs)/num_shots     
+            p4_cnts[name_of_4_pnt_event]=sum(locs)/num_shots     
 
     if p_depol_after!=[]:
         for key in p4_cnts.keys():
@@ -74,7 +61,93 @@ def get_4_pnt_events(defect_matrix,p_depol_after):
     return p4_cnts
 
 
-def get_vijkl(p4_cnts,num_rounds,num_ancilla,vi_mean,vivj_mean):
+
+# #TODO: Rewrite the intersection of arrays
+# def get_4_pnt_events(defect_matrix,p_depol_after):
+#     '''
+#     Collect the <v_{ijkl}> for all possible 4 point events in the detector error model.
+#     The 4-pnt events consist of 2 consecutive detectors in the same round, and the same 2 detectors shifted by one round.
+
+#     Input: 
+#         defect_matrix: xarray of dims num_shots x num_rounds+1 x num_ancilla
+#         p_depol_after: either [] or a numerical value of the 2-qubit depolarizing error after the gates.
+    
+#     Output: 
+#         p4_cnts: dictionary with keys the events of the form ("Di","Dj","Dk","Dl") and values the average # of times where all 4 detectors fire together.
+#     '''
+
+    
+
+#     num_shots    = np.size(defect_matrix.data,axis=0)     
+#     num_rounds   = np.size(defect_matrix.data,axis=1)     
+#     num_anc      = np.size(defect_matrix.data,axis=2)     
+
+
+#     p4_cnts = {}
+
+#     for anc1 in range(num_anc-1):
+       
+#         anc2 = anc1+1
+#         anc3 = anc1
+#         anc4 = anc2
+
+#         for round1 in range(num_rounds-1):
+
+#             round2 = round1
+#             round3 = round1+1
+#             round4 = round3
+
+            
+
+#             locs1 = np.nonzero(defect_matrix.data[:,round1,anc1])[0]
+#             locs2 = np.nonzero(defect_matrix.data[:,round2,anc2])[0]
+#             locs3 = np.nonzero(defect_matrix.data[:,round3,anc3])[0]
+#             locs4 = np.nonzero(defect_matrix.data[:,round4,anc4])[0]
+
+#             locs1 = set(locs1)
+#             locs2 = set(locs2)
+#             locs3 = set(locs3)
+#             locs4 = set(locs4)
+
+#             locs  = locs1 & locs2 & locs3 & locs4 #all should be nnz for the same shot
+            
+#             #Indices are sorted
+#             indx1 = anc1+num_anc*round1
+#             indx2 = anc2+num_anc*round2
+#             indx3 = anc3+num_anc*round3
+#             indx4 = anc4+num_anc*round4
+
+#             # inds = np.sort([indx1,indx2,indx3,indx4])
+
+#             name_of_4_pnt_event = ("D"+str(indx1),"D"+str(indx2),"D"+str(indx3),"D"+str(indx4))
+            
+#             p4_cnts[name_of_4_pnt_event]=len(locs)/num_shots     
+
+#     if p_depol_after!=[]:
+#         for key in p4_cnts.keys():
+#             p4_cnts[key]=2/3*4/5*p_depol_after
+   
+
+#     return p4_cnts
+
+def get_det_inds_as_rd_anc_pairs(num_rounds: int,num_ancilla: int):
+
+    num_rounds +=1
+    det_inds_rd_anc = {}
+
+    for rd in range(num_rounds):
+
+        for anc in range(num_ancilla):
+
+            new_ind = anc + rd*num_ancilla
+
+            det_inds_rd_anc[new_ind]=(rd,anc)
+
+    return det_inds_rd_anc
+
+
+
+def get_vijkl(p4_cnts: dict, num_rounds: int,num_ancilla: int, vi_mean, vivj_mean, det_inds_rd_anc: dict):
     '''
     Prepare the dictionaries for the observed number of counts of single, two-point and 4-point events,
     that will be fed into the numerical equations to solve.
@@ -98,23 +171,25 @@ def get_vijkl(p4_cnts,num_rounds,num_ancilla,vi_mean,vivj_mean):
     for key in p4_cnts.keys():
 
         temp_dict = {}
-        det_inds = []
-        for det in key:
-            ind = int(det[1:])
-
-            for rd in range(num_rounds):
-
-                for anc in range(num_ancilla):
-
-                    new_ind = anc + rd*num_ancilla
-                    if new_ind==ind:
-                        det_inds.append((rd,anc))
-                        break
+        det_inds  = []
         
-        inds1 = det_inds[0]
-        inds2 = det_inds[1]
-        inds3 = det_inds[2]
-        inds4 = det_inds[3]
+        det_inds = [det_inds_rd_anc[int(det[1:])] for det in key]
+
+        # for det in key:
+        #     ind = int(det[1:])
+
+        #     det_inds.append(det_inds_rd_anc[ind])
+
+            # for rd in range(num_rounds):
+
+            #     for anc in range(num_ancilla):
+
+            #         new_ind = anc + rd*num_ancilla
+            #         if new_ind==ind:
+            #             det_inds.append((rd,anc))
+            #             break
+        
+        inds1,inds2,inds3,inds4 = det_inds
         
         vi = vi_mean[inds1[0],inds1[1]] #v1000
         vj = vi_mean[inds2[0],inds2[1]] #v0100
@@ -147,7 +222,10 @@ def get_vijkl(p4_cnts,num_rounds,num_ancilla,vi_mean,vivj_mean):
 
 
 def form_equation_terms(target_inds, order):
-    '''target_inds: some list that contains 0,1,2,3 elements.
+    '''
+    Form the equations for the 4 pnt events
+
+    target_inds: some list that contains 0,1,2,3 elements.
     These correspond to the x0,x1,x2,x3 for P(x0,x1,x2,x3).
     order: the order of p events we want to calculate.
     '''
@@ -325,7 +403,6 @@ def form_all_4_pnt_equations(max_truncation_order):
     return P
 
 
-#Equations up to O(p^3): It works pretty well!!
 def equations(vars, v0001, v0010, v0100, v1000, v1111,v1100, v1010, v0101, v0011):
 
     p0, p1, p2, p3, x, p01, p02, p13, p23 = vars
@@ -888,16 +965,18 @@ def solve_system_of_equations(min_bound,max_bound,method,vijkl):
     all_dicts={}
     for key in vijkl.keys():
 
-        # solution_dict=apply_4_pnt_method(v0001, v0010, v0100, v1000, v1111,v1100, v1010, v0101, v0011,min_bound,max_bound,method)
-        v0001 = vijkl[key]["v0001"]
-        v0010 = vijkl[key]["v0010"]
-        v0100 = vijkl[key]["v0100"]
-        v1000 = vijkl[key]["v1000"]
-        v1111 = vijkl[key]["v1111"]
-        v1100 = vijkl[key]["v1100"]
-        v1010 = vijkl[key]["v1010"]
-        v0101 = vijkl[key]["v0101"]
-        v0011 = vijkl[key]["v0011"]
+        temp = vijkl[key]
+
+
+        v0001 = temp["v0001"]
+        v0010 = temp["v0010"]
+        v0100 = temp["v0100"]
+        v1000 = temp["v1000"]
+        v1111 = temp["v1111"]
+        v1100 = temp["v1100"]
+        v1010 = temp["v1010"]
+        v0101 = temp["v0101"]
+        v0011 = temp["v0011"]
 
         solution_dict=apply_4_pnt_method(v0001, v0010, v0100, v1000, v1111,v1100, v1010, v0101, v0011,min_bound,max_bound,method)
 
@@ -946,16 +1025,18 @@ def fill_initial_prob_values(all_dicts,bulk_edges,time_edges,bd_edges):
 
     for key in all_dicts.keys():
 
-        for key2 in all_dicts[key].keys():
+        temp = all_dicts[key]
+
+        for key2 in temp.keys():
 
             if key2[0]=="D": #this is a bd edge
-                pij_bd[key2]=all_dicts[key][key2]
+                pij_bd[key2]=temp[key2]
             elif key2 in bulk_edges:
-                pij_bulk[key2]=all_dicts[key][key2]
+                pij_bulk[key2]=temp[key2]
             elif key2 in time_edges:
-                pij_time[key2]=all_dicts[key][key2]
+                pij_time[key2]=temp[key2]
             else: #4 pnt event
-                p4_cnts[key2]=all_dicts[key][key2]
+                p4_cnts[key2]=temp[key2]
 
     return pij_bulk,pij_time,pij_bd,p4_cnts
 
@@ -971,14 +1052,22 @@ def update_edges_after_4_pnt_estimation(pij_bulk,pij_time,pij_bd,p4_cnts,num_anc
             anc2  = anc1+1
             indx1 = anc1 + num_ancilla*rd1
             indx2 = anc2 + num_ancilla*rd2
-            name  = ("D"+str(indx1),"D"+str(indx2))
+            # name  = ("D"+str(indx1),"D"+str(indx2))
+            
+            name = (f"D{indx1}",f"D{indx2}")
 
-            name_of_4_pnt_event =  ("D"+str(indx1-num_ancilla),"D"+str(indx2-num_ancilla),
-                                    "D"+str(indx1),"D"+str(indx2))
+
+            name_of_4_pnt_event = (f"D{indx1-num_ancilla}",f"D{indx2-num_ancilla}",f"D{indx1}",f"D{indx2}")
+
+            # name_of_4_pnt_event =  ("D"+str(indx1-num_ancilla),"D"+str(indx2-num_ancilla),
+            #                         "D"+str(indx1),"D"+str(indx2))
             
             
             pnew1               = p4_cnts[name_of_4_pnt_event]
-            name_of_4_pnt_event =  ("D"+str(indx1),"D"+str(indx2),"D"+str(indx1+num_ancilla),"D"+str(indx2+num_ancilla))            
+
+
+            # name_of_4_pnt_event =  ("D"+str(indx1),"D"+str(indx2),"D"+str(indx1+num_ancilla),"D"+str(indx2+num_ancilla))            
+            name_of_4_pnt_event =  (f"D{indx1}",f"D{indx2}",f"D{indx1+num_ancilla}",f"D{indx2+num_ancilla}")            
 
             # pnew2 = p4_cnts[name_of_4_pnt_event] 
             pij_bulk[name]= (pij_bulk[name]-pnew1)/(1-2*(pnew1))
@@ -996,7 +1085,8 @@ def update_edges_after_4_pnt_estimation(pij_bulk,pij_time,pij_bd,p4_cnts,num_anc
                 indx1 = anc1 + num_ancilla*rd1
                 indx2 = anc2 + num_ancilla*rd2
 
-                name  = ("D"+str(indx1),"D"+str(indx2))
+                # name  = ("D"+str(indx1),"D"+str(indx2))
+                name  = (f"D{indx1}",f"D{indx2}")
 
                 for key in p4_cnts.keys():
 
@@ -1021,18 +1111,21 @@ def update_edges_after_4_pnt_estimation(pij_bulk,pij_time,pij_bd,p4_cnts,num_anc
         if rd>0: #get previous rd
             rd2   = rd-1
             indx2 = anc+num_ancilla*rd2
-            DENOM *= 1-2*pij_time[("D"+str(indx2),"D"+str(indx1))]
+            # DENOM *= 1-2*pij_time[("D"+str(indx2),"D"+str(indx1))]
+            DENOM *= 1-2*pij_time[(f"D{indx2}",f"D{indx1}")]
 
         if rd<(num_rounds-1):
             rd2   = rd+1
             indx2 = anc+num_ancilla*rd2
             
-            DENOM *= 1-2*pij_time[("D"+str(indx1),"D"+str(indx2))]
+            # DENOM *= 1-2*pij_time[("D"+str(indx1),"D"+str(indx2))]
+            DENOM *= 1-2*pij_time[(f"D{indx1}",f"D{indx2}")]
         
         #Get bulk edge:
         anc2  = anc+1
         indx2 = anc2+num_ancilla*rd
-        DENOM *= 1-2*pij_bulk[("D"+str(indx1),"D"+str(indx2))]
+        # DENOM *= 1-2*pij_bulk[("D"+str(indx1),"D"+str(indx2))]
+        DENOM *= 1-2*pij_bulk[(f"D{indx1}",f"D{indx2}")]
 
         #Get all relevant 4-pnt events
         for key in p4_cnts.keys():
@@ -1059,18 +1152,21 @@ def update_edges_after_4_pnt_estimation(pij_bulk,pij_time,pij_bd,p4_cnts,num_anc
         if rd>0: #get previous rd
             rd2   = rd-1
             indx2 = anc+num_ancilla*rd2
-            DENOM *= 1-2*pij_time[("D"+str(indx2),"D"+str(indx1))]
+            # DENOM *= 1-2*pij_time[("D"+str(indx2),"D"+str(indx1))]
+            DENOM *= 1-2*pij_time[(f"D{indx2}",f"D{indx1}")]
 
         if rd<(num_rounds-1):
             rd2   = rd+1
             indx2 = anc+num_ancilla*rd2
             
-            DENOM *= 1-2*pij_time[("D"+str(indx1),"D"+str(indx2))]
+            # DENOM *= 1-2*pij_time[("D"+str(indx1),"D"+str(indx2))]
+            DENOM *= 1-2*pij_time[(f"D{indx1}",f"D{indx2}")]
         
         #Get bulk edge:
         anc2  = anc-1
         indx2 = anc2+num_ancilla*rd
-        DENOM *= 1-2*pij_bulk[("D"+str(indx2),"D"+str(indx1))]
+        # DENOM *= 1-2*pij_bulk[("D"+str(indx2),"D"+str(indx1))]
+        DENOM *= 1-2*pij_bulk[(f"D{indx2}",f"D{indx1}")]
 
         #Get all relevant 4-pnt events
         for key in p4_cnts.keys():
