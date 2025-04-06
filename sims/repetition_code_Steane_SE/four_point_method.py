@@ -62,74 +62,6 @@ def get_4_pnt_events(defect_data,p_depol_after):
 
 
 
-# #TODO: Rewrite the intersection of arrays
-# def get_4_pnt_events(defect_matrix,p_depol_after):
-#     '''
-#     Collect the <v_{ijkl}> for all possible 4 point events in the detector error model.
-#     The 4-pnt events consist of 2 consecutive detectors in the same round, and the same 2 detectors shifted by one round.
-
-#     Input: 
-#         defect_matrix: xarray of dims num_shots x num_rounds+1 x num_ancilla
-#         p_depol_after: either [] or a numerical value of the 2-qubit depolarizing error after the gates.
-    
-#     Output: 
-#         p4_cnts: dictionary with keys the events of the form ("Di","Dj","Dk","Dl") and values the average # of times where all 4 detectors fire together.
-#     '''
-
-    
-
-#     num_shots    = np.size(defect_matrix.data,axis=0)     
-#     num_rounds   = np.size(defect_matrix.data,axis=1)     
-#     num_anc      = np.size(defect_matrix.data,axis=2)     
-
-
-#     p4_cnts = {}
-
-#     for anc1 in range(num_anc-1):
-       
-#         anc2 = anc1+1
-#         anc3 = anc1
-#         anc4 = anc2
-
-#         for round1 in range(num_rounds-1):
-
-#             round2 = round1
-#             round3 = round1+1
-#             round4 = round3
-
-            
-
-#             locs1 = np.nonzero(defect_matrix.data[:,round1,anc1])[0]
-#             locs2 = np.nonzero(defect_matrix.data[:,round2,anc2])[0]
-#             locs3 = np.nonzero(defect_matrix.data[:,round3,anc3])[0]
-#             locs4 = np.nonzero(defect_matrix.data[:,round4,anc4])[0]
-
-#             locs1 = set(locs1)
-#             locs2 = set(locs2)
-#             locs3 = set(locs3)
-#             locs4 = set(locs4)
-
-#             locs  = locs1 & locs2 & locs3 & locs4 #all should be nnz for the same shot
-            
-#             #Indices are sorted
-#             indx1 = anc1+num_anc*round1
-#             indx2 = anc2+num_anc*round2
-#             indx3 = anc3+num_anc*round3
-#             indx4 = anc4+num_anc*round4
-
-#             # inds = np.sort([indx1,indx2,indx3,indx4])
-
-#             name_of_4_pnt_event = ("D"+str(indx1),"D"+str(indx2),"D"+str(indx3),"D"+str(indx4))
-            
-#             p4_cnts[name_of_4_pnt_event]=len(locs)/num_shots     
-
-#     if p_depol_after!=[]:
-#         for key in p4_cnts.keys():
-#             p4_cnts[key]=2/3*4/5*p_depol_after
-   
-
-#     return p4_cnts
-
 def get_det_inds_as_rd_anc_pairs(num_rounds: int,num_ancilla: int):
 
     num_rounds +=1
@@ -174,20 +106,6 @@ def get_vijkl(p4_cnts: dict, num_rounds: int,num_ancilla: int, vi_mean, vivj_mea
         det_inds  = []
         
         det_inds = [det_inds_rd_anc[int(det[1:])] for det in key]
-
-        # for det in key:
-        #     ind = int(det[1:])
-
-        #     det_inds.append(det_inds_rd_anc[ind])
-
-            # for rd in range(num_rounds):
-
-            #     for anc in range(num_ancilla):
-
-            #         new_ind = anc + rd*num_ancilla
-            #         if new_ind==ind:
-            #             det_inds.append((rd,anc))
-            #             break
         
         inds1,inds2,inds3,inds4 = det_inds
         
@@ -982,7 +900,7 @@ def solve_system_of_equations(min_bound,max_bound,method,vijkl):
 
 
         #rename the dicts of solution_dict:
-        
+
         solution_dict[key[0]] = solution_dict.pop("p0")
         solution_dict[key[1]] = solution_dict.pop("p1")
         solution_dict[key[2]] = solution_dict.pop("p2")
