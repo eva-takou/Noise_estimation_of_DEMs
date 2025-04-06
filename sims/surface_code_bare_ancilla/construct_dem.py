@@ -192,7 +192,10 @@ def surface_code_DEM(pij_bulk: dict,pij_bd: dict,pij_time: dict, stims_DEM: stim
 
     for key in pij_bulk.keys():
 
-        d0,d1 = key
+        # print("key:",key)
+        # d0,d1 = key
+        d0 = key[0]
+        d1 = key[1]
         det_indx1 = int(d0[1:])
         det_indx2 = int(d1[1:])
         logic = key[2]
