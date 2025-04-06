@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from surface_code_lattice import surface_code_star_stabs
+from sims.surface_code_bare_ancilla.surface_code_lattice import surface_code_star_stabs
 import stim
 
 

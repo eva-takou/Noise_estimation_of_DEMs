@@ -1,5 +1,5 @@
 import stim
-from surface_code_lattice import *
+from sims.surface_code_bare_ancilla.surface_code_lattice import *
 import numpy as np
 from utilities.circuit_control import *
 
