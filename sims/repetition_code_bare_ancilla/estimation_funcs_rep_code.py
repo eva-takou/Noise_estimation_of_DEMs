@@ -1,10 +1,4 @@
-
-import numpy as np
-import xarray as xr
 from utilities.general_utils import bulk_prob_formula
-
-
-#------------------ Estimation of error probabilities for time edges  ---------------------------
 
 
 def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, vi_mean, vivj_mean):
@@ -44,10 +38,6 @@ def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, vi_mean, vivj_mean
             time_edge_probs[("D"+str(indx1),"D"+str(indx2))]=val
 
     return time_edge_probs  
-
-
-#------------------ Estimation of error probabilities for the bulk  ------------------------
-
 
 
 def estimate_data_edge_bulk_probs_all(num_rounds: int, num_ancilla: int, vi_mean: float, vivj_mean: float):
@@ -101,11 +91,8 @@ def estimate_data_edge_bulk_probs_all(num_rounds: int, num_ancilla: int, vi_mean
     return pij_bulk
 
 
-#----------------- Estimation of error probabilities for boundary edges --------------------------------
-
 
 def estimate_data_edge_bd_probs(num_rounds: int, num_ancilla: int, vi_mean: float, vivj_mean: float):
-
     '''
     Estimate the boundary edge probabilities corresponding to data qubits. For the repetition code
     the boundary edge errors are detected by the first ancilla qubit and the last ancilla qubit.
