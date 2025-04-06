@@ -971,14 +971,9 @@ def update_edges_after_4_pnt_estimation(pij_bulk,pij_time,pij_bd,p4_cnts,num_anc
             anc2  = anc1+1
             indx1 = anc1 + num_ancilla*rd1
             indx2 = anc2 + num_ancilla*rd2
-            # name  = ("D"+str(indx1),"D"+str(indx2))
             
             name                = (f"D{indx1}",f"D{indx2}")
             name_of_4_pnt_event = (f"D{indx1-num_ancilla}",f"D{indx2-num_ancilla}",f"D{indx1}",f"D{indx2}")
-
-            # name_of_4_pnt_event =  ("D"+str(indx1-num_ancilla),"D"+str(indx2-num_ancilla),
-            #                         "D"+str(indx1),"D"+str(indx2))
-            
             
             pnew1          = p4_cnts[name_of_4_pnt_event]
             pij_bulk[name] = (pij_bulk[name]-pnew1)/(1-2*(pnew1))
@@ -996,7 +991,7 @@ def update_edges_after_4_pnt_estimation(pij_bulk,pij_time,pij_bd,p4_cnts,num_anc
                 indx1 = anc1 + num_ancilla*rd1
                 indx2 = anc2 + num_ancilla*rd2
 
-                # name  = ("D"+str(indx1),"D"+str(indx2))
+                
                 name  = (f"D{indx1}",f"D{indx2}")
 
                 for key in p4_cnts.keys():
@@ -1022,20 +1017,16 @@ def update_edges_after_4_pnt_estimation(pij_bulk,pij_time,pij_bd,p4_cnts,num_anc
         if rd>0: #get previous rd
             rd2   = rd-1
             indx2 = anc+num_ancilla*rd2
-            # DENOM *= 1-2*pij_time[("D"+str(indx2),"D"+str(indx1))]
             DENOM *= 1-2*pij_time[(f"D{indx2}",f"D{indx1}")]
 
         if rd<(num_rounds-1):
             rd2   = rd+1
             indx2 = anc+num_ancilla*rd2
-            
-            # DENOM *= 1-2*pij_time[("D"+str(indx1),"D"+str(indx2))]
             DENOM *= 1-2*pij_time[(f"D{indx1}",f"D{indx2}")]
         
         #Get bulk edge:
         anc2  = anc+1
         indx2 = anc2+num_ancilla*rd
-        # DENOM *= 1-2*pij_bulk[("D"+str(indx1),"D"+str(indx2))]
         DENOM *= 1-2*pij_bulk[(f"D{indx1}",f"D{indx2}")]
 
         #Get all relevant 4-pnt events
@@ -1063,20 +1054,16 @@ def update_edges_after_4_pnt_estimation(pij_bulk,pij_time,pij_bd,p4_cnts,num_anc
         if rd>0: #get previous rd
             rd2   = rd-1
             indx2 = anc+num_ancilla*rd2
-            # DENOM *= 1-2*pij_time[("D"+str(indx2),"D"+str(indx1))]
             DENOM *= 1-2*pij_time[(f"D{indx2}",f"D{indx1}")]
 
         if rd<(num_rounds-1):
             rd2   = rd+1
             indx2 = anc+num_ancilla*rd2
-            
-            # DENOM *= 1-2*pij_time[("D"+str(indx1),"D"+str(indx2))]
             DENOM *= 1-2*pij_time[(f"D{indx1}",f"D{indx2}")]
         
         #Get bulk edge:
         anc2  = anc-1
         indx2 = anc2+num_ancilla*rd
-        # DENOM *= 1-2*pij_bulk[("D"+str(indx2),"D"+str(indx1))]
         DENOM *= 1-2*pij_bulk[(f"D{indx2}",f"D{indx1}")]
 
         #Get all relevant 4-pnt events
