@@ -940,6 +940,7 @@ def fill_initial_prob_values(all_dicts,bulk_edges,time_edges,bd_edges):
     pij_time = {}
     pij_bd   = {}
     p4_cnts  = {}
+    
 
     for key in all_dicts.keys():
 
@@ -972,23 +973,15 @@ def update_edges_after_4_pnt_estimation(pij_bulk,pij_time,pij_bd,p4_cnts,num_anc
             indx2 = anc2 + num_ancilla*rd2
             # name  = ("D"+str(indx1),"D"+str(indx2))
             
-            name = (f"D{indx1}",f"D{indx2}")
-
-
+            name                = (f"D{indx1}",f"D{indx2}")
             name_of_4_pnt_event = (f"D{indx1-num_ancilla}",f"D{indx2-num_ancilla}",f"D{indx1}",f"D{indx2}")
 
             # name_of_4_pnt_event =  ("D"+str(indx1-num_ancilla),"D"+str(indx2-num_ancilla),
             #                         "D"+str(indx1),"D"+str(indx2))
             
             
-            pnew1               = p4_cnts[name_of_4_pnt_event]
-
-
-            # name_of_4_pnt_event =  ("D"+str(indx1),"D"+str(indx2),"D"+str(indx1+num_ancilla),"D"+str(indx2+num_ancilla))            
-            name_of_4_pnt_event =  (f"D{indx1}",f"D{indx2}",f"D{indx1+num_ancilla}",f"D{indx2+num_ancilla}")            
-
-            # pnew2 = p4_cnts[name_of_4_pnt_event] 
-            pij_bulk[name]= (pij_bulk[name]-pnew1)/(1-2*(pnew1))
+            pnew1          = p4_cnts[name_of_4_pnt_event]
+            pij_bulk[name] = (pij_bulk[name]-pnew1)/(1-2*(pnew1))
 
     #I think the time edges need to be updated for d>3?
     #and we need to update those time edges that do not correspond to anc=0, num_ancilla-1
