@@ -76,14 +76,41 @@ def avg_vivj(defect_matrix_data):
         mat = defect_matrix_data[shot]
         for i in range(num_rounds):
             for j in range(num_rounds):
+                idx1 = i * num_rounds + j
                 for k in range(num_anc):
                     for l in range(num_anc):
-                        idx1 = i * num_rounds + j
+                        
                         idx2 = k * num_anc + l
                         avg_vivj[idx1, idx2] += mat[i, k] * mat[j, l]
 
     avg_vivj /= num_shots
     return avg_vivj.reshape((num_rounds, num_rounds, num_anc, num_anc))
+
+
+#Faster variant
+@njit
+def avg_vivj_alt(defect_matrix_data):
+    num_shots, num_rounds, num_anc = defect_matrix_data.shape
+    result = np.zeros((num_rounds, num_rounds, num_anc, num_anc))
+
+    for shot in range(num_shots):
+        mat = defect_matrix_data[shot]
+        for i in range(num_rounds):
+            row_i = mat[i]
+            for j in range(num_rounds):
+                row_j = mat[j]
+                # Outer product
+                for k in range(num_anc):
+                    for l in range(num_anc):
+                        result[i, j, k, l] += row_i[k] * row_j[l]
+
+    result /= num_shots
+    return result
+
+
+
+
+
 
 def bulk_prob_formula(v1: float,v2: float, v1v2:float):
     '''
