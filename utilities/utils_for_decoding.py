@@ -27,26 +27,16 @@ def decode_both_dems_same_data(reconstructed_DEM:stim.DetectorErrorModel,circuit
     predictions = matcher.decode_batch(detection_events)
 
     # Count the mistakes.
-    num_errors_stim = 0
-    for shot in range(num_shots):
-        actual_for_shot = observable_flips[shot]
-        predicted_for_shot = predictions[shot]
-        if not np.array_equal(actual_for_shot, predicted_for_shot):
-            num_errors_stim += 1
+    num_errors_stim =   np.sum(~np.all(observable_flips == predictions, axis=1))      
 
     #Now do the same for my model.
 
     matcher     = pymatching.Matching.from_detector_error_model(reconstructed_DEM)
-    predictions = matcher.decode_batch(detection_events) #use same detection events
-
-    num_errors_est = 0
-    for shot in range(num_shots):
-        actual_for_shot    = observable_flips[shot]  #use same obs_flips
-        predicted_for_shot = predictions[shot]
-        if not np.array_equal(actual_for_shot, predicted_for_shot):
-            num_errors_est += 1    
+    predictions = matcher.decode_batch(detection_events) #use same detection events    
+    num_errors_est =   np.sum(~np.all(observable_flips == predictions, axis=1))      
 
     return num_errors_est,num_errors_stim
+
 
 
 def decode_both_dems_diff_data(reconstructed_DEM,circuit,num_shots):
