@@ -6,7 +6,7 @@ from numba import njit
 
 
 
-def stims_DEM_to_dictionary(DEM: stim.DetectorErrorModel):
+def DEM_to_dictionary(DEM: stim.DetectorErrorModel):
     '''
     Convert all the error instructions of stim's DEM
     into a dictionary.
@@ -26,17 +26,9 @@ def stims_DEM_to_dictionary(DEM: stim.DetectorErrorModel):
 
             targets = instruction.targets_copy()
             prob    = instruction.args_copy()[0]
-            
-            dets = []
-            for target in targets:
-                if target.is_relative_detector_id():
-                    ind = target.val
-                    dets.append("D"+str(ind))
-                else:
-                    dets.append("L0")
 
-            key = tuple(dets)
-            error_dict[key]=prob
+            dets = [f"D{t.val}" if t.is_relative_detector_id() else "L0" for t in targets]
+            error_dict[tuple(dets)]=prob
             
     return error_dict
 
