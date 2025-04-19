@@ -1,7 +1,8 @@
 import stim
 import numpy as np
 from noise_est_funcs_for_color_code import *
-
+from math import prod
+from utilities.general_utils import *
 
 #These functions work only for d>=5.
 
@@ -183,25 +184,8 @@ def create_Z_DEM(pij_bd,pij_bulk,pij_time,p3,Z_DEM):
     
     
     #Collect in a dictionary the error instructions
-    error_events_in_Z_DEM = {}
     
-    for instruction in Z_DEM:
-
-        if instruction.type=="error":
-
-            targets = instruction.targets_copy()
-            prob    = instruction.args_copy()[0]
-            dets    = []
-            for target in targets:
-
-                if target.is_relative_detector_id():
-                    ind = target.val
-                    dets.append("D"+str(ind))
-                else: #logical observable
-                    dets.append("L0")
-            
-            error_events_in_Z_DEM[tuple(dets)]=prob 
-
+    error_events_in_Z_DEM = DEM_to_dictionary(Z_DEM)
     my_DEM = stim.DetectorErrorModel()
 
     #Now create our own dem:
@@ -209,7 +193,6 @@ def create_Z_DEM(pij_bd,pij_bulk,pij_time,p3,Z_DEM):
         
         targets   = []
         dets_only = []
-        flag_L0   = False
         for det in key:
 
             if det[0]=="D":
@@ -217,7 +200,6 @@ def create_Z_DEM(pij_bd,pij_bulk,pij_time,p3,Z_DEM):
                 targets.append(stim.target_relative_detector_id(ind))
                 dets_only.append("D"+str(ind))
             else:
-                flag_L0 = True
                 targets.append(stim.target_logical_observable_id(0))
                 
         dets_only = tuple(dets_only)
@@ -249,24 +231,8 @@ def create_X_DEM(pij_bd,pij_bulk,pij_time,p3,X_DEM):
     
 
     #Collect in a dictionary the error instructions
-    error_events_in_X_DEM={}
-    
-    for instruction in X_DEM:
+    error_events_in_X_DEM = DEM_to_dictionary(X_DEM)
 
-        if instruction.type=="error":
-
-            targets = instruction.targets_copy()
-            prob    = instruction.args_copy()[0]
-            dets    = []
-            for target in targets:
-
-                if target.is_relative_detector_id():
-                    ind = target.val
-                    dets.append("D"+str(ind))
-                else: #logical observable
-                    dets.append("L0")
-            
-            error_events_in_X_DEM[tuple(dets)]=prob 
 
     my_DEM = stim.DetectorErrorModel()
 
@@ -275,7 +241,7 @@ def create_X_DEM(pij_bd,pij_bulk,pij_time,p3,X_DEM):
         
         targets   = []
         dets_only = []
-        flag_L0   = False
+
         for det in key:
 
             if det[0]=="D":
@@ -283,7 +249,7 @@ def create_X_DEM(pij_bd,pij_bulk,pij_time,p3,X_DEM):
                 targets.append(stim.target_relative_detector_id(ind))
                 dets_only.append("D"+str(ind))
             else:
-                flag_L0 = True
+                
                 targets.append(stim.target_logical_observable_id(0))
                 
         dets_only = tuple(dets_only)
@@ -323,21 +289,7 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type,obj,num_rounds,vi_me
     else:
         raise Exception("defects_type can be only X or Z")
 
-    errors_in_DEM={}
-    for instruction in stims_DEM:
-        if instruction.type=="error":
-
-            targets = instruction.targets_copy()
-            temp = []
-            for target in targets:
-                
-                if target.is_relative_detector_id():
-                    id = target.val 
-                    temp.append("D"+str(id))
-                else:
-                    temp.append("L0")
-                errors_in_DEM[tuple(temp)] = instruction.args_copy()[0]
-    
+    errors_in_DEM = DEM_to_dictionary(stims_DEM)
     
     pij_bulk = {}
     pij_time = {}
@@ -360,7 +312,29 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type,obj,num_rounds,vi_me
             det2     = all_keys[k]
             rd2,anc2 = dets[det2]
 
-            if rd1==rd2: #bulk edge
+            
+            if tuple([det1,det2]) not in errors_in_DEM.keys() and tuple([det1,det2,"L0"]) not in errors_in_DEM.keys():
+                continue
+
+            if rd1!=rd2 and anc1==anc2: #time edges:
+
+                v1 = vi_mean[rd1,anc1]
+                v2 = vi_mean[rd2,anc2]
+                v1v2 = vivj_mean[rd1,rd2,anc1,anc2]
+
+                if bulk_prob_formula(v1,v2,v1v2)<=0:
+                    continue
+
+                pij_time[tuple([det1,det2])] = bulk_prob_formula(v1,v2,v1v2)
+
+                for key in p3.keys():
+
+                    if det1 in key and det2 in key:
+                        p = pij_time[tuple([det1,det2])]
+                        pij_time[tuple([det1,det2])] = (p-p3[key])/(1-2*p3[key])            
+
+
+            else: # rd1==rd2: #space-bulk or space-time bulk
 
                 v1   = vi_mean[rd1,anc1]
                 v2   = vi_mean[rd2,anc2]
@@ -377,24 +351,7 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type,obj,num_rounds,vi_me
                         p                            = pij_bulk[tuple([det1,det2])]
                         pij_bulk[tuple([det1,det2])] = (p-p3[key])/(1-2*p3[key])
 
-            if rd1!=rd2 and tuple([det1,det2]) in errors_in_DEM.keys(): #time edges:
-                v1 = vi_mean[rd1,anc1]
-                v2 = vi_mean[rd2,anc2]
-                v1v2 = vivj_mean[rd1,rd2,anc1,anc2]
 
-                if bulk_prob_formula(v1,v2,v1v2)<=0:
-                    continue
-
-                pij_time[tuple([det1,det2])] = bulk_prob_formula(v1,v2,v1v2)
-
-                for key in p3.keys():
-
-                    if det1 in key and det2 in key:
-                        p = pij_time[tuple([det1,det2])]
-                        pij_time[tuple([det1,det2])] = (p-p3[key])/(1-2*p3[key])
-
-
-    #check for <=0 values and delete the key-value pairs
     
     #Bulk
     for key in pij_bulk.keys():
@@ -410,32 +367,23 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type,obj,num_rounds,vi_me
 
     pij_bd = {}
     #Finally, get the boundary edges:
+
+    
     for q in range(len(all_keys)):
 
         
         det1     = all_keys[q]
+
+        if (det1,) not in errors_in_DEM.keys() and (det1,"L0") not in errors_in_DEM.keys():
+            continue
+
         rd1,anc1 = dets[det1]
         v1       = vi_mean[rd1,anc1]
 
-        DENOM = 1
-
-        for key in pij_bulk.keys():
-
-            if det1 in key:
-                
-                
-                
-                DENOM *=1-2*pij_bulk[key]
-        
-        for key in pij_time.keys():
-            if det1 in key:
-                
-                DENOM *=1-2*pij_time[key]
-        
-        for key in p3.keys():
-            if det1 in key:
-                
-                DENOM *=1-2*p3[key]
+        DENOM  = 1
+        DENOM *= prod(1 - 2 * p for k, p in pij_bulk.items() if det1 in k)
+        DENOM *= prod(1 - 2 * p for k, p in pij_time.items() if det1 in k)
+        DENOM *= prod(1 - 2 * p for k, p in p3.items() if det1 in k)
         
         pij_bd[det1] = 1/2 + (v1-1/2)/DENOM
 
