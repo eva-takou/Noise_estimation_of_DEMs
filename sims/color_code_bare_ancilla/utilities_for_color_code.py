@@ -4,7 +4,7 @@ from noise_est_funcs_for_color_code import *
 from math import prod
 from utilities.general_utils import *
 
-#These functions work only for d>=5.
+#The function are applied for d>=5 color code.
 
 def decompose_org_DEM_into_ZX_DEMs(circuit,Z_dets,X_dets):
     
@@ -312,7 +312,6 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type,obj,num_rounds,vi_me
             det2     = all_keys[k]
             rd2,anc2 = dets[det2]
 
-            
             if tuple([det1,det2]) not in errors_in_DEM.keys() and tuple([det1,det2,"L0"]) not in errors_in_DEM.keys():
                 continue
 
@@ -334,7 +333,7 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type,obj,num_rounds,vi_me
                         pij_time[tuple([det1,det2])] = (p-p3[key])/(1-2*p3[key])            
 
 
-            else: # rd1==rd2: #space-bulk or space-time bulk
+            else: #space-bulk or space-time bulk
 
                 v1   = vi_mean[rd1,anc1]
                 v2   = vi_mean[rd2,anc2]
@@ -394,11 +393,6 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type,obj,num_rounds,vi_me
     for key in pij_bd.keys():
         if pij_bd[key]<=0:
             pij_bd[key]=0
-
-    # for key in keys_to_delete:
-    #     pij_bd.pop(key,None)
-    
-
 
     return pij_bulk,pij_time,pij_bd,p3
 
