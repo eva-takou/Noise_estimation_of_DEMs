@@ -17,7 +17,6 @@ def get_measurement_data(samples,DATA_QUBITS: list,ANC_QUBITS: list,NUM_ROUNDS: 
         NUM_ROUNDS: the total # of QEC rounds
         NUM_SHOTS: the total # of shots
 
-
     Output:
         anc_qubit_samples:  the ancilla qubit outcomes per shot and per QEC round. (xArray of size # of shots x # of rounds  x # of ancilla)
         data_qubit_samples: the data qubit outcomes (last measurements). (xArray of size # shots x # of data qubits)
@@ -55,7 +54,7 @@ def get_initial_state(anc_qubits: list):
     Output:
         initial_state: xArray of all zeros, with dimensions the ancilla qubit names
     '''
-    #Initial ancilla state
+    
     initial_state = np.zeros(len(anc_qubits), dtype=int)
     initial_state = initial_state==True
     initial_state = xr.DataArray ( data=initial_state,dims=[ "anc_qubit" ] ,coords=dict ( anc_qubit=anc_qubits) , ) 
@@ -142,7 +141,7 @@ def extract_error_probs(defects_matrix):
     num_ancilla = np.shape(defects_matrix)[2]
 
     vi_mean   = avg_vi(defects_matrix)
-    vivj_mean = avg_vivj(defects_matrix.data)
+    vivj_mean = avg_vivj_alt(defects_matrix.data)
 
     #Estimate the different probs: dictionaries where fields have the form ((rd1,rd2),(anc1,anc2))
     pij_time = estimate_time_edge_probs(num_rounds,num_ancilla, vi_mean,vivj_mean)
@@ -154,7 +153,7 @@ def extract_error_probs(defects_matrix):
 
 
 def space_bulk_edge_names(num_rounds: int,num_ancilla: int):
-    '''Return the name of space edges in the bulk as a dictionary.
+    '''Return the name of space edges in the bulk of the repetition code as a list.
     
     Input:
         num_rounds: # of QEC rounds (int)
