@@ -15,7 +15,7 @@ def get_initial_state(anc_qubits: list):
         initial_state: an xarray of length # of anc qubits
 
     '''
-    #Initial ancilla state
+
     initial_state = np.zeros(len(anc_qubits), dtype=int)
     initial_state = initial_state==True
     initial_state = xr.DataArray ( data=initial_state,dims=[ "anc_qubit" ] ,coords=dict ( anc_qubit=anc_qubits) , ) 
@@ -23,7 +23,7 @@ def get_initial_state(anc_qubits: list):
     return initial_state
 
 
-def project_data_meas(data_meas,num_rounds: int,anc_qubits: list):
+def project_data_meas(data_meas, num_rounds: int, anc_qubits: list):
     '''Project the last data qubit measurement onto stabilizer values.
     
     Input: 
@@ -50,9 +50,10 @@ def project_data_meas(data_meas,num_rounds: int,anc_qubits: list):
     return syndrome_proj
 
 
-def get_defects_matrix(distance: int,num_rounds: int,num_shots: int,circuit: stim.Circuit):
-    '''Construct the defects matrix given the detection outcomes of the repetition code
-    under Steane style syndrome extraction.
+def get_defects_matrix(distance: int, num_rounds: int, num_shots: int, circuit: stim.Circuit):
+    '''Construct the defects matrix from the detection outcomes, for a repetition code
+       under Steane style syndrome extraction.
+
     Input:
         distance:   distance of the code
         num_rounds: # of QEC rounds
@@ -108,7 +109,7 @@ def get_defects_matrix(distance: int,num_rounds: int,num_shots: int,circuit: sti
 
 
 
-def construct_dem(pij_bulk: dict,pij_bd: dict,pij_time: dict,p4_cnts: dict):
+def construct_dem(pij_bulk: dict, pij_bd: dict, pij_time: dict, p4_cnts: dict):
     '''Contruct the detector error model given the estimated values of error probabilities.
     
     Input:
