@@ -835,6 +835,7 @@ def fill_initial_prob_values(all_dicts,bulk_edges,time_edges):
 
     return pij_bulk,pij_time,pij_bd,p4_cnts
 
+
 def update_edges_after_4_pnt_estimation(pij_bulk: dict, pij_time: dict, pij_bd: dict, p4_cnts: dict, 
                                         num_rounds: int, vi_mean, distance: int):
     '''Update the edges by subtracting the contribution from the four-point events.
@@ -852,7 +853,6 @@ def update_edges_after_4_pnt_estimation(pij_bulk: dict, pij_time: dict, pij_bd: 
             pij_time: updated dictionary of time edge probabiliites
             pij_bd: updated dictionary of boundary edge probabiliites
             p4_cnts: updated dictionary of four-point hyperedge probabiliites
-            
     '''
 
     num_rounds +=1
@@ -873,28 +873,24 @@ def update_edges_after_4_pnt_estimation(pij_bulk: dict, pij_time: dict, pij_bd: 
             pnew1          = p4_cnts[name_of_4_pnt_event]
             pij_bulk[name] = (pij_bulk[name]-pnew1)/(1-2*(pnew1))
 
-    #I think the time edges need to be updated for d>3?
-    #and we need to update those time edges that do not correspond to anc=0, num_ancilla-1
 
-    if distance>3:
+    for rd1 in range(num_rounds-1):
+        rd2 = rd1+1
 
-        for rd1 in range(num_rounds-1):
-            rd2 = rd1+1
+        for anc1 in range(1,num_ancilla-1):
+            anc2  = anc1 
+            indx1 = anc1 + num_ancilla*rd1
+            indx2 = anc2 + num_ancilla*rd2
 
-            for anc1 in range(1,num_ancilla-1):
-                anc2  = anc1 
-                indx1 = anc1 + num_ancilla*rd1
-                indx2 = anc2 + num_ancilla*rd2
+            
+            name  = (f"D{indx1}",f"D{indx2}")
 
-                
-                name  = (f"D{indx1}",f"D{indx2}")
+            for key in p4_cnts.keys():
 
-                for key in p4_cnts.keys():
-
-                    if name[0] in key and name[1] in key:
-                        pnew1 = p4_cnts[key]
-                        pij_time[name]=(pij_time[name]-pnew1)/(1-2*pnew1)
-                        break
+                if name[0] in key and name[1] in key:
+                    pnew1 = p4_cnts[key]
+                    pij_time[name]=(pij_time[name]-pnew1)/(1-2*pnew1)
+                    break
 
             
     #Bd-edges: subtract 4-pnt events, subtract time events and subtract bulk events
@@ -925,11 +921,11 @@ def update_edges_after_4_pnt_estimation(pij_bulk: dict, pij_time: dict, pij_bd: 
         DENOM *= 1-2*pij_bulk[(f"D{indx1}",f"D{indx2}")]
 
         #Get all relevant 4-pnt events
-        for key in p4_cnts.keys():
+        for key,val in p4_cnts.items():
 
             if name in key:
 
-                DENOM *=1-2*p4_cnts[key]
+                DENOM *=1-2*val
                 
 
         pij_bd[name] = 1/2+(v0-1/2)/DENOM
