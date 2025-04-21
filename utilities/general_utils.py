@@ -32,6 +32,33 @@ def DEM_to_dictionary(DEM: stim.DetectorErrorModel):
             
     return error_dict
 
+def DEM_to_dictionary_drop_logicals(DEM: stim.DetectorErrorModel):
+    '''
+    Convert all the error instructions of stim's DEM
+    into a dictionary, but drop the logicals from the name of the dictionary.
+    
+    Input: 
+        DEM: Detector error model obtained by stim
+    Output:
+        error_dict: Dictionary with keys the detectors & logical observables
+                    and values the error probabilities.
+
+    '''
+
+    error_dict ={}
+    for instruction in DEM:
+
+        if instruction.type=="error":
+
+            targets = instruction.targets_copy()
+            prob    = instruction.args_copy()[0]
+
+            dets = [f"D{t.val}" for t in targets if t.is_relative_detector_id()]
+            error_dict[tuple(dets)]=prob
+            
+    return error_dict
+
+
 def avg_vi(defect_matrix: xr.DataArray):
     '''
     Get the <vi> of detection events, across many runs of the circuit.
