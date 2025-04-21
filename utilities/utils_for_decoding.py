@@ -20,7 +20,7 @@ def decode_both_dems_same_data(reconstructed_DEM:stim.DetectorErrorModel,circuit
     detection_events, observable_flips = sampler.sample(num_shots, separate_observables=True)
 
     # Configure a decoder using the circuit.
-    detector_error_model = circuit.detector_error_model(flatten_loops=True) 
+    detector_error_model = circuit.detector_error_model() 
     matcher              = pymatching.Matching.from_detector_error_model(detector_error_model)
 
     # Run the decoder.
