@@ -1,6 +1,3 @@
-
-
-
 def edge_dicts(num_ancilla: int,num_rounds: int):
     '''Create a dictionary with all the edge names, besides the 4-point events.
     
@@ -9,11 +6,10 @@ def edge_dicts(num_ancilla: int,num_rounds: int):
         num_rounds: # of QEC rounds w/o final stabilizer reconstruction (int)
     
     Output:
-        bulk_edges: dictionary with keys the name of bulk space edges of the form ("Di","Dj") and values set to 0
-        time_edges: dictionary with keys the name of time edges of the form ("Di","Dj") and values set to 0
-        bd_edges  : dictionary with keys the name of time edges of the form ("Di") and values set to 0
+        bulk_edges: set with elements the name of bulk space edges of the form ("Di","Dj") and values set to 0
+        time_edges: set with elements the name of time edges of the form ("Di","Dj") and values set to 0
+        bd_edges  : set with elements the name of time edges of the form ("Di") and values set to 0
     '''
-
 
     bulk_edges = set()
     time_edges = set()
@@ -58,3 +54,27 @@ def edge_dicts(num_ancilla: int,num_rounds: int):
         bd_edges.add(name)
 
     return bulk_edges,time_edges,bd_edges
+
+
+def get_det_inds_as_rd_anc_pairs(num_rounds: int, num_ancilla: int):
+    '''Get a dictionary of the detector index and the number of QEC round and detection it corresponds.
+    
+    Input:
+        num_rounds: # of QEC rounds
+        num_ancilla: # of ancilla (detectors) per QEC rounds
+    Output:
+        det_inds_rd_anc: dictionary with keys the indices of detectors and values the (rd,anc) it corresponds to.
+
+    '''
+    num_rounds +=1
+    det_inds_rd_anc = {}
+
+    for rd in range(num_rounds):
+
+        for anc in range(num_ancilla):
+
+            new_ind = anc + rd*num_ancilla
+
+            det_inds_rd_anc[new_ind]=(rd,anc)
+
+    return det_inds_rd_anc
