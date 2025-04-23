@@ -26,10 +26,6 @@ def construct_logical_state_on_ancilla(distance: int, logical_state: str,after_C
             anc_prep_circuit.append_operation("CX",qq)
             anc_prep_circuit.append(after_CNOT_depol_type,qq,p_depol_after)
         
-        # if distance>3:
-        #     Qpair = [anc_qubits[1]]+flag_qubit
-        #     anc_prep_circuit.append_operation("CX",Qpair)
-            #anc_prep_circuit.append(after_CNOT_depol_type,Qpair,p_depol_after)
 
     elif logical_state=='+':
         
@@ -66,11 +62,6 @@ def entangle_data_with_ancilla(data_qubits: list,anc_qubits: list, logical_state
             
             qq = [data_qubits[k]]+[anc_qubits[k]]
             circuit.append_operation("CX",qq)
-            
-            #if k==0:
-                #circuit.append(after_CNOT_depol_type,qq,p_depol_after)
-            
-            #circuit.append(after_CNOT_depol_type,qq,p_depol_after)
             circuit.append(after_CNOT_depol_type,qq,p_depol_after)
 
     elif logical_state == '+':
@@ -128,9 +119,6 @@ def construct_repeating_block_for_Steane_Extraction(distance: int, data_qubits: 
             # Initialization error
             block.append("DEPOLARIZE1",data_qubits,p_data)
             block.append("DEPOLARIZE1",anc_qubits,p_anc)
-
-            # if distance>3:
-            #     block.append("DEPOLARIZE1",flag_qubit,p_anc)            
             
             block.append("TICK",[])
             
@@ -145,14 +133,6 @@ def construct_repeating_block_for_Steane_Extraction(distance: int, data_qubits: 
             
             # Measure the flag qubit
 
-            # if distance>3:    
-
-            #     if logical_state=='+':
-            #         block.append_operation("H",flag_qubit)
-
-            #     block.append_operation("MR",flag_qubit)    
-            #     block.append("DETECTOR",[stim.target_rec(-1)],(0,0,1))        
-
             block.append("TICK",[])
             # Measure the ancilla qubits:
 
@@ -165,15 +145,6 @@ def construct_repeating_block_for_Steane_Extraction(distance: int, data_qubits: 
             #Detector annotation
             for k in range(len(anc_qubits)-1,0,-1): #range(len(anc_qubits)-1)
                 coords = (k,0)
-                # block.append("DETECTOR",[stim.target_rec(-1-k),
-                #                          stim.target_rec(-2-k),
-                #                          stim.target_rec(-1-k-(distance)), 
-                #                          stim.target_rec(-2-k-(distance))],coords) 
-
-                # if distance>3:
-                #     rec3 = stim.target_rec(-k-distance-1)
-                #     rec4 = stim.target_rec(-k-distance-2)
-                # else:
                 rec3 = stim.target_rec(-k-(distance))
                 rec4 = stim.target_rec(-1-k-(distance))
                                         
@@ -208,16 +179,10 @@ def repetition_code_circuit_Steane_Extraction(distance: int, num_rounds: int, p_
 
     circuit.append_operation("R",data_qubits+anc_qubits)
 
-    # if distance>3:
-    #     circuit.append_operation("R",flag_qubit)
-    # circuit.append("TICK",[])
 
     # Initialization error
     circuit.append("DEPOLARIZE1",data_qubits,p_data)
     circuit.append("DEPOLARIZE1",anc_qubits,p_anc)
-
-    # if distance>3:
-    #     circuit.append("DEPOLARIZE1",flag_qubit,p_anc)
 
     # Logical 0 on data qubits: we do nothing
     # Logical + on data qubits: apply H on every qubit (repetition code memory |+>_L)
@@ -230,16 +195,6 @@ def repetition_code_circuit_Steane_Extraction(distance: int, num_rounds: int, p_
 
     circuit +=  anc_prep_circuit
 
-    # # Measure the flag qubit
-    # if distance>3:    
-
-    #     if logical_state=='+':
-    #         circuit.append_operation("H",flag_qubit)
-
-    #     circuit.append_operation("MR",flag_qubit)
-
-    #     circuit.append_operation("DETECTOR",stim.target_rec(-1),(0,0,0)) #flag coords
-
     circuit.append("TICK",[])
 
     #Now, apply CNOTs from each data qubit to each ancilla qubits
@@ -250,12 +205,6 @@ def repetition_code_circuit_Steane_Extraction(distance: int, num_rounds: int, p_
 
             qq = [data_qubits[k]]+[anc_qubits[k]]
             circuit.append_operation("CX",qq)
-
-            #if k==1:#k==0 or k==len(anc_qubits)-1:
-                #circuit.append(after_CNOT_depol_type,qq,p_depol_after)
-            #if k==0:
-            #circuit.append(after_CNOT_depol_type,qq,p_depol_after)
-
             circuit.append(after_CNOT_depol_type,qq,p_depol_after)
 
     elif logical_state=='+':
@@ -269,7 +218,6 @@ def repetition_code_circuit_Steane_Extraction(distance: int, num_rounds: int, p_
     circuit.append("TICK",[])
     # Measure the rest of the ancilla:
 
-    #circuit.append("TICK",[])
     circuit += measure_logical_ancilla(anc_qubits,logical_state, Reset)
     
 
@@ -280,8 +228,7 @@ def repetition_code_circuit_Steane_Extraction(distance: int, num_rounds: int, p_
         coords = (k,0)
         circuit.append("DETECTOR",[stim.target_rec(-1-k),
                                    stim.target_rec(-k)],
-                                   coords) #stim.target_rec(-1-k-(distance-1)) Dont associate with the previous one
-        
+                                   coords) 
         
 
     #Now, construct the repeating block:
@@ -307,14 +254,9 @@ def repetition_code_circuit_Steane_Extraction(distance: int, num_rounds: int, p_
 
     cnt = 0
     circuit.append_operation("SHIFT_COORDS", [], [0,1])
-    for k in range(len(data_qubits),1,-1): #range(1,len(data_qubits))
+    for k in range(len(data_qubits),1,-1): 
         
         coords = (k-1,0)
-        # circuit.append("DETECTOR",[stim.target_rec(-1-cnt),
-        #                            stim.target_rec(-2-cnt),
-        #                            stim.target_rec(-cnt-distance-1),
-        #                            stim.target_rec(-cnt-distance-2)],coords)
-
 
         circuit.append("DETECTOR",[stim.target_rec(-k+1),
                                    stim.target_rec(-k),
