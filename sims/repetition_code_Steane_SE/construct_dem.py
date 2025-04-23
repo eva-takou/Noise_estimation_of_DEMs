@@ -3,24 +3,7 @@ import xarray as xr
 import stim
 import pymatching
 from pymatching import Matching
-
-
-def get_initial_state(anc_qubits: list):
-    '''Get initial state for ancilla qubits of all 0s.
-    
-    Input:
-        anc_qubits: a list of the ancilla qubit names
-    
-    Output:
-        initial_state: an xarray of length # of anc qubits
-
-    '''
-
-    initial_state = np.zeros(len(anc_qubits), dtype=int)
-    initial_state = initial_state==True
-    initial_state = xr.DataArray ( data=initial_state,dims=[ "anc_qubit" ] ,coords=dict ( anc_qubit=anc_qubits) , ) 
-    
-    return initial_state
+from utilities.defects_matrix_utils import *
 
 
 def project_data_meas(data_meas, num_rounds: int, anc_qubits: list):
