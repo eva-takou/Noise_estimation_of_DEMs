@@ -255,8 +255,6 @@ def second_diag_errors_DEM(distance: int, num_rounds: int):
     return detector_pairs,rd_and_anc_pairs
 
 
-
-
 def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, defects_matrix,vi_mean) -> dict:
     '''
     Estimate the error probabilities of ancilla qubits (time-edges).
