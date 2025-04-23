@@ -1,5 +1,4 @@
 import numpy as np
-import xarray as xr
 from utilities.general_utils import bulk_prob_formula
 
 def get_L0_inds(distance: int):
@@ -11,7 +10,6 @@ def get_L0_inds(distance: int):
     L0_inds = np.arange(shift+1,shift+1+L)
 
     return L0_inds
-
 
 def get_observable_flips(data_qubit_samples,L0_inds):
     '''Get the observable flips from the data qubit measurements.
@@ -26,6 +24,7 @@ def get_observable_flips(data_qubit_samples,L0_inds):
     obs_flips = np.bitwise_xor.reduce(data_qubit_samples.data[:, L0_inds], axis=1)
 
     return obs_flips
+
 
 
 def get_anc_indices_for_bd_edges(L: int):
@@ -46,7 +45,7 @@ def get_anc_indices_for_bd_edges(L: int):
 
     return anc_indices_checking_bd
 
-def get_nearest_anc_indices(L,Option):
+def get_nearest_anc_indices(L: int ,Option):
     '''Return the nearest indices of any ancilla index.
     
     
@@ -89,8 +88,7 @@ def get_nearest_anc_indices(L,Option):
 
     return nearest_anc
 
-
-def nearest_anc_inds_to_unique_pairs(distance,Option):
+def nearest_anc_inds_to_unique_pairs(distance: int, Option):
 
     '''These are all the bulk connections (ancillas defining a qubit edge).'''
 
@@ -115,17 +113,20 @@ def nearest_anc_inds_to_unique_pairs(distance,Option):
     pairs = set()
     for v1, neighbors in anc_neighbors.items():
         for v2 in neighbors:
-            sorted_pair = tuple(sorted((v1, v2)))
-            pairs.add(sorted_pair)
+            
+            # sorted_pair = tuple(sorted((v1, v2)))
+            pairs.add((min(v1,v2),max(v1,v2)))
 
     pairs = list(pairs)    
                 
 
     return pairs
 
-
-def get_anc_pairs_that_form_L0(distance,num_rounds):
-    ''' Get the edge indices of the logical observable, where the edge is formed by the names of the
+def get_anc_pairs_that_form_L0(distance: int, num_rounds: int):
+    '''
+    
+      
+        Get the edge indices of the logical observable, where the edge is formed by the names of the
     detectors. Also, the inds are shifted by the num_rounds. The number of rounds is +1 from the actual
     QEC rounds, because it also includes the projection.'''
     
@@ -177,16 +178,25 @@ def get_anc_pairs_that_form_L0(distance,num_rounds):
 
     return anc_pairs_for_L0
 
-def first_diag_errors_DEM(distance,num_rounds):
-    '''Indices of detectors that form
-    one of the diagonal errors in the DEM'''
+def first_diag_errors_DEM(distance: int, num_rounds: int):
+    '''
+    Get rd,anc indices of one set of diagonal errors of the surface code detector error model.
+    
+    Input: 
+        distance: distance of surface code (int)
+        num_rounds: # of QEC rounds (int)
+    Output:
+        detector_pairs: list of tuples of detector names of the form (indx1,indx2), where indx = anc + num_ancilla * rd
+        rd_and_anc_pairs: list of tuples of the form (rd1,anc1,rd2,anc2)
+
+    '''
     
     L                = distance
     num_ancilla      = L*(L-1)
     detector_pairs   = []
     rd_and_anc_pairs = []
 
-    for anc1 in range(L,num_ancilla):#range(L,num_ancilla):  #only L through 2L will lead to L0
+    for anc1 in range(L,num_ancilla):  #only L through 2L will lead to L0
 
         anc2  = anc1-(L)
 
@@ -197,15 +207,28 @@ def first_diag_errors_DEM(distance,num_rounds):
             indx2 = anc2 + num_ancilla * rd2
 
             detector_pairs.append((indx1,indx2))
-
             rd_and_anc_pairs.append((rd1,anc1,rd2,anc2))
+
+            if indx2<indx1:
+                raise Exception("Inds not sorted.")
 
 
     return detector_pairs, rd_and_anc_pairs
 
-def second_diag_errors_DEM(distance,num_rounds):
-    '''Indices of detectors that form
-    the other diagonal errors in the DEM'''
+
+
+def second_diag_errors_DEM(distance: int, num_rounds: int):
+    '''
+    Get rd,anc indices of one set of diagonal errors of the surface code detector error model.
+    
+    Input: 
+        distance: distance of surface code (int)
+        num_rounds: # of QEC rounds (int)
+    Output:
+        detector_pairs: list of tuples of detector names of the form (indx1,indx2), where indx = anc + num_ancilla * rd
+        rd_and_anc_pairs: list of tuples of the form (rd1,anc1,rd2,anc2)
+
+    '''
     L           = distance
     num_ancilla = L*(L-1)
 
@@ -215,14 +238,12 @@ def second_diag_errors_DEM(distance,num_rounds):
     rd_and_anc_pairs = []
 
     for anc1 in range(1,num_ancilla):
+        anc2  = anc1-1
 
         for rd1 in range(num_rounds-1):
 
             indx1 = anc1 + num_ancilla * rd1
-
-            rd2 = rd1+1
-
-            anc2  = anc1-1
+            rd2   = rd1+1    
             indx2 = anc2 + num_ancilla * rd2
 
             if indx1 not in lower_bd_ancilla:
@@ -236,8 +257,7 @@ def second_diag_errors_DEM(distance,num_rounds):
 
 
 
-
-def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, vi_mean, vivj_mean):
+def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, defects_matrix,vi_mean) -> dict:
     '''
     Estimate the error probabilities of ancilla qubits (time-edges).
     These are all bulk edges because one error creates two detector events.
@@ -254,31 +274,41 @@ def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, vi_mean, vivj_mean
 
     '''
 
+    num_shots   = np.shape(defects_matrix)[0]
     num_rounds += 1
     pij_time    = {}
 
-    for anc in range(num_ancilla):
+    data = defects_matrix.data
 
-        for rd1 in range(num_rounds-1):
+    #Need rd and rd+1 for each ancilla.
 
-            rd2  = rd1+1
-            v1   = vi_mean[rd1,anc]
-            v2   = vi_mean[rd2,anc]
-            v1v2 = vivj_mean[rd1,rd2,anc,anc]
+    anc_array = np.arange(num_ancilla)
+    
+    for rd1 in range(num_rounds-1):
+        
+        rd2  = rd1+1
 
-            val = bulk_prob_formula(v1,v2,v1v2)
+        data1 = data[:, rd1, :]
+        data2 = data[:, rd2, :]
 
-            indx1 = anc + num_ancilla * rd1
-            indx2 = anc + num_ancilla * rd2 
+        v1   = vi_mean[rd1,:]
+        v2   = vi_mean[rd2,:]
+        v1v2 = np.sum(data1 & data2, axis=0) / num_shots        
 
-            pij_time[(f"D{indx1}",f"D{indx2}")] = val
+        vals = np.array([bulk_prob_formula(a, b, c) for a, b, c in zip(v1, v2, v1v2)])
+
+        indx1 = anc_array + num_ancilla * rd1
+        indx2 = anc_array + num_ancilla * rd2
+
+        pij_time.update({(f"D{i1}", f"D{i2}"): val for i1, i2, val in zip(indx1, indx2, vals)})
+        
+        
 
     return pij_time
 
 
-
-
-def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: int, vi_mean, vivj_mean, pij_time: dict):
+def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: int, 
+                                             defects_matrix, pij_time: dict,vi_mean):
     '''
     Get the estimated probability for any bulk or boundary edges.
 
@@ -298,23 +328,28 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
     Option       = "all"
     anc_pairs    = nearest_anc_inds_to_unique_pairs(distance,Option)
     logical_inds = get_anc_pairs_that_form_L0(distance,num_rounds)
+    num_shots    = np.shape(defects_matrix)[0]
+
+    data = defects_matrix.data
 
     #Same rd, different anc pairs
+
+    LA = len(anc_pairs)
+
     for rd1 in range(num_rounds):
 
         rd2 = rd1
         
-        for l in range(len(anc_pairs)):
+        for l in range(LA):
 
             anc1,anc2 = anc_pairs[l]
             
             indx1 = anc1 + num_ancilla * rd1
             indx2 = anc2 + num_ancilla * rd2
 
-            v1v2 = vivj_mean[rd1,rd2,anc1,anc2]
             v1   = vi_mean[rd1,anc1]
             v2   = vi_mean[rd2,anc2]
-
+            v1v2 = np.sum(data[:,rd1,anc1]& data[:,rd2,anc2])/num_shots
 
             det_indx1 = f"D{indx1}"
             det_indx2 = f"D{indx2}"
@@ -328,52 +363,46 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
 
 
     #now add the right and the left diagonals
-    det_inds,right_pairs = first_diag_errors_DEM(distance,num_rounds)
-    det_inds,left_pairs  = second_diag_errors_DEM(distance,num_rounds)
+    det_inds_right,right_pairs = first_diag_errors_DEM(distance,num_rounds)
+    det_inds_left,left_pairs   = second_diag_errors_DEM(distance,num_rounds)
 
-    for l in range(len(right_pairs)):
+    RP = len(right_pairs)
+
+    range_for_L0 = set(range(L, 2*L))
+
+    for l in range(RP):
         
         rd1, anc1, rd2, anc2 = right_pairs[l]
 
-        INDX1 = anc1+num_ancilla*rd1
-        INDX2 = anc2+num_ancilla*rd2
-
-        indx1 = min([INDX1,INDX2])
-        indx2 = max([INDX1,INDX2])
+        indx1,indx2=det_inds_right[l]
 
         det_indx1 = f"D{indx1}"
         det_indx2 = f"D{indx2}"
 
-        v1v2 = vivj_mean[rd1,rd2,anc1,anc2]
         v1   = vi_mean[rd1,anc1]
         v2   = vi_mean[rd2,anc2]
+        v1v2 = np.sum(data[:,rd1,anc1]& data[:,rd2,anc2])/num_shots
 
-        
-        if anc1 in range(L,2*L):
+        if anc1 in range_for_L0:
             pij_bulk[(det_indx1,det_indx2,"L0")]=bulk_prob_formula(v1,v2,v1v2)            
         else:
             pij_bulk[(det_indx1,det_indx2,"")]=bulk_prob_formula(v1,v2,v1v2)            
 
+    LP = len(left_pairs)
 
-    for l in range(len(left_pairs)):
+    for l in range(LP):
         
         rd1, anc1, rd2, anc2 = left_pairs[l]
 
-        INDX1 = anc1+num_ancilla*rd1
-        INDX2 = anc2+num_ancilla*rd2
-
-        indx1 = min([INDX1,INDX2])
-        indx2 = max([INDX1,INDX2])
+        indx1,indx2 = det_inds_left[l]
 
         det_indx1 = f"D{indx1}"
         det_indx2 = f"D{indx2}"
 
-        
-        v1v2 = vivj_mean[rd1,rd2,anc1,anc2]
         v1   = vi_mean[rd1,anc1]
         v2   = vi_mean[rd2,anc2]
-
-
+        v1v2 = np.sum(data[:,rd1,anc1] & data[:,rd2,anc2])/num_shots
+        
         pij_bulk[(det_indx1,det_indx2,"")]=bulk_prob_formula(v1,v2,v1v2)            
 
     #Finally, add the bd errors. For this we need the nearest detectors to the currently inspected one
@@ -405,76 +434,112 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
 
             #Get nearest bulk space edge (not diagonal)
 
-            neighbors = nearest_to_bd[anc]
+            # neighbors = nearest_to_bd[anc]
             
-            for anc2 in neighbors:
+            # for anc2 in neighbors:
                 
-                num_of_det2 = anc2 + num_ancilla*rd1
-                det_indx2   = f"D{num_of_det2}"
-                
-                for KEY in pij_bulk.keys():
+            #     num_of_det2         = anc2 + num_ancilla*rd1
+            #     new_indx1,new_indx2 = (num_of_det,num_of_det2) if num_of_det<num_of_det2 else (num_of_det2,num_of_det)
 
-                    
-                    if KEY[0:2]==(det_indx1,det_indx2) or KEY[0:2]==(det_indx2,det_indx1):
+                
+            #     d1 = f"D{new_indx1}"
+            #     d2 = f"D{new_indx2}"
+
+                
+            #     key = (d1, d2, "")
+            #     if key not in pij_bulk:
+            #         key = (d1, d2, "L0")
+
+            #     p2 = pij_bulk[key]
+
+            #     DENOM *= 1 - 2 * p2
+
+            # #-----Add the diagonals-------
+
+            # #Right diagonals:
+            
+            # if rd1<num_rounds: 
+
+            #     anc2  = anc-L
+
+            #     if anc2>=0:
+
+            #         rd2   = rd1+1
+            #         indx2 = anc2 + num_ancilla * rd2 
+
+            #         try_key1 = (det_indx1,f"D{indx2}","")
+            #         try_key2 = (det_indx1,f"D{indx2}","L0")
+
+            #         if try_key1 in pij_bulk:
+            #             p1 = pij_bulk[try_key1]
+            #             DENOM *= 1-2*p1
+            #         elif try_key2 in pij_bulk:
+            #             p1 = pij_bulk[try_key2]
+            #             DENOM *= 1-2*p1
+            
+            # if rd1>=1: 
+
+            #     anc2  = anc+L
+
+            #     if anc2<=(num_ancilla-1):
+
+            #         rd2   = rd1-1
+            #         indx2 = anc2 + num_ancilla * rd2 
+
+            #         try_key1 = (f"D{indx2}",det_indx1,"")
+            #         try_key2 = (f"D{indx2}",det_indx1,"L0")
+
+            #         if try_key1 in pij_bulk:
                         
-                        p2 = pij_bulk[KEY]
-                        DENOM *= 1 -2*p2
-            
+            #             p1 = pij_bulk[try_key1]
+            #             DENOM *= 1-2*p1
+            #         elif try_key2 in pij_bulk:
+                        
+            #             p1 = pij_bulk[try_key2]
+            #             DENOM *= 1-2*p1
 
-            #Add the diagonals:
 
-            for l in range(len(left_pairs)):
-                
-                RD0,A0,RD1,A1 = left_pairs[l]
-
-                INDX0 = A0 + num_ancilla*RD0
-                INDX1 = A1 + num_ancilla*RD1
-
-                if INDX0 == num_of_det:
-                    
-                    indx0      = min([INDX1,num_of_det])
-                    indx_other = max([INDX1,num_of_det])
-                    p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","")]
-                    DENOM *= 1-2*p1
-
-                elif INDX1 == num_of_det:
-
-                    indx0      = min([INDX0,num_of_det])
-                    indx_other = max([INDX0,num_of_det])
-                    p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","")]
-                    DENOM *= 1-2*p1
+            filtered = {k:v for k,v in pij_bulk.items() if k[0]==det_indx1 or k[1]==det_indx1}
 
             
-            for l in range(len(right_pairs)):
+
+            for key,val in filtered.items():
                 
-                RD0,A0,RD1,A1 = right_pairs[l]
+                DENOM *=1-2*val
 
-                INDX0 = A0 + num_ancilla*RD0
-                INDX1 = A1 + num_ancilla*RD1
 
-                if INDX0 == num_of_det:
-                    
-                    indx0      = min([INDX1,num_of_det])
-                    indx_other = max([INDX1,num_of_det])
 
-                    if (f"D{indx0}",f"D{indx_other}","L0") in pij_bulk.keys():
+            #Left diagonals:
+                
 
-                        p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","L0")]
-                    else:
-                        p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","")]
-                    
-                    DENOM *= 1-2*p1
+            # for l in range(LP):
 
-                elif INDX1 == num_of_det:
+            #     temp = det_inds_left[l]
+                
+            #     if num_of_det in temp:
+            #         p1         = pij_bulk[(f"D{temp[0]}",f"D{temp[1]}","")]
+            #         DENOM *= 1-2*p1
 
-                    indx0      = min([INDX0,num_of_det])
-                    indx_other = max([INDX0,num_of_det])
+            
 
-                    if (f"D{indx0}",f"D{indx_other}","L0") in pij_bulk.keys():
-                        p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","L0")]
-                    else:
-                        p1         = pij_bulk[(f"D{indx0}",f"D{indx_other}","")]
-                    DENOM *= 1-2*p1
+            # for l in range(RP):
+
+            #     temp = det_inds_right[l]
+
+            #     if num_of_det in temp:
+            #         key = (f"D{temp[0]}",f"D{temp[1]}","")
+            #         if key in pij_bulk:
+            #             p1  = pij_bulk[(f"D{temp[0]}",f"D{temp[1]}","")]
+            #         else:
+            #             p1 = pij_bulk[(f"D{temp[0]}",f"D{temp[1]}","L0")]
+
+            #         # try:
+            #         #     p1         = pij_bulk[(f"D{temp[0]}",f"D{temp[1]}","")]
+            #         # except KeyError:
+            #         #     p1         = pij_bulk[(f"D{temp[0]}",f"D{temp[1]}","L0")]
+            #         DENOM *= 1-2*p1
+
+
             
 
             pij_bd[det_indx1]=1/2+NUMER/DENOM
