@@ -46,7 +46,6 @@ def decompose_org_DEM_into_ZX_DEMs(circuit: stim.Circuit, Z_dets: list, X_dets: 
 
                     elif det_name in X_dets:
                         
-
                         dets_for_X_dem.append(det_name)
                         
                 else: #logical observable
@@ -67,7 +66,6 @@ def decompose_org_DEM_into_ZX_DEMs(circuit: stim.Circuit, Z_dets: list, X_dets: 
             if dets_for_X_dem!=[]:
 
                 
-
                 key = tuple(dets_for_X_dem)
                 if key in dict_for_X.keys():
                     p = dict_for_X[key]
@@ -86,13 +84,9 @@ def decompose_org_DEM_into_ZX_DEMs(circuit: stim.Circuit, Z_dets: list, X_dets: 
         prob    = dict_for_Z[key]
         targets = []
 
-        for det in key:
-            
-            if det[0]=="D":
-                indx = int(det[1:])
-                targets.append(stim.target_relative_detector_id(indx))
-            elif det[0]=="L":
-                targets.append(stim.target_logical_observable_id(0))
+        targets = [stim.target_relative_detector_id(int(det[1:])) if det[0]=="D" \
+                   else stim.target_logical_observable_id(0)\
+                   for det in key]
         
         DEM_Z.append("error",prob,targets=targets)
 
@@ -100,17 +94,12 @@ def decompose_org_DEM_into_ZX_DEMs(circuit: stim.Circuit, Z_dets: list, X_dets: 
         DEM_Z.append(det_coord)
     
     for key in dict_for_X.keys():
-        prob   = dict_for_X[key]
-        targets=[]
+        
+        prob    = dict_for_X[key]
+        targets = [stim.target_relative_detector_id(int(det[1:]))  \
+                   for det in key if det[0]=="D"]
 
-        for det in key:
-            
-            if det[0]=="D":
-                indx = int(det[1:])
-                targets.append(stim.target_relative_detector_id(indx))
-            
         DEM_X.append("error",prob,targets=targets)
-
 
 
     return DEM_Z,DEM_X
@@ -133,7 +122,7 @@ def create_Z_DEM(pij_bd: dict, pij_bulk: dict, pij_time: dict, p3: dict, Z_DEM: 
     #Collect in a dictionary the error instructions
     
     error_events_in_Z_DEM = DEM_to_dictionary(Z_DEM)
-    my_DEM = stim.DetectorErrorModel()
+    my_DEM                = stim.DetectorErrorModel()
 
     #Now create our own dem:
     for key in error_events_in_Z_DEM.keys():
