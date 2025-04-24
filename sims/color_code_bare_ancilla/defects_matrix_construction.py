@@ -108,7 +108,7 @@ def get_inds_for_syndrome_projection(circuit: stim.Circuit):
     return all_inds
 
 
-#TODO: Make the part of syndrome projection faster.
+
 def get_defects(circuit: stim.Circuit, num_rounds: int, num_shots: int,obj):
     '''Get the defects (i.e., detector) matrix of the circuit, by composing raw circuit measurements.
 
