@@ -385,8 +385,6 @@ def planar_surface_code_circuit_X_memory(L: int, num_rounds: int, p_depol_data: 
         circuit: the stim circuit
         '''
    
-    #For X-memory, if we check the X-stabs, we need to use the Z-logical operator and not the X-logical operator 
-    #as an observable (this is because it is conjugated by Hadamards). 
     #The surface code structure is created as follows (example for d=3):
     #         A3   Q7   A6
     #Q10 ------x--------x-------- Q13
@@ -411,18 +409,10 @@ def planar_surface_code_circuit_X_memory(L: int, num_rounds: int, p_depol_data: 
     #Q8 -------x--------x--------- Q11
     #              Q5     
 
-    #Edges are the data qubits. "x"'s are the X-type (star) checks that check for Z-type errors.
-    #"o"'s are the z-type checks.
-    #The data qubit coordinate enumerations starts with the vertical edges, and then we move to the inner horizontal edges, and finally to the outer horizontal edges
-    #The ancilla qubit enumeration for star checks starts from the bottom left, and then we move along the vertical direction, and then we finaly move to the next column to 
-    #continue the enumeration (starting from bottom and going to the top).
-    #The ancilla qubit enumeration for loop checks starts from the middle blocks moves to the right, once we consider all weight-4 stabs.
-    #Then we move to the left boundary and finally to the right boundary.
-
     circuit           = stim.Circuit()
     
     HX                = surface_code_star_stabs(L)   #Checks the X-parity of the qubits (detect Z-type errors)
-    # HZ                = surface_code_loop_stabs(L)   #Checks the Z-parity of the qubits (detect X-type errors)
+    HZ                = surface_code_loop_stabs(L)   #Checks the Z-parity of the qubits (detect X-type errors)
     XL                = surface_code_x_logical(L)    #X-Logical operator
     
     n_anc             = np.shape(HX)[0]  #Number of X-type ancilla qubits
@@ -435,7 +425,7 @@ def planar_surface_code_circuit_X_memory(L: int, num_rounds: int, p_depol_data: 
     data_edge,all_meas_nodes, meas_nodes, bd_nodes = surface_code_planar(L)
     anc_type = 'X'
 
-    circuit, data_qubit_coords, anc_coords_X = assign_coordinates(circuit, data_edge, meas_nodes, HX,anc_type)
+    circuit, data_qubit_coords, anc_coords_X = assign_coordinates(circuit, data_edge, meas_nodes, HZ,anc_type)
 
     
     circuit.append("RX",data_qubits)               #X-memory experiment (preserve the |+>_L state)
