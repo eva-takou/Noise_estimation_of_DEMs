@@ -2,8 +2,14 @@ import numpy as np
 from utilities.general_utils import bulk_prob_formula
 
 def get_L0_inds(distance: int):
-    '''Get the indices of qubits that form the logical operator.
-    
+    '''Get the indices of qubits that form the logical operator. The indices correspond to which entries we get from
+       the data_qubit_samples.
+
+       Input:
+            distance: distance of the unrotated surface code
+       Output:
+            L0_inds: indices of qubits we select from data_qubit_samples to form the logical observable
+
     '''
     L       = distance
     shift   = (L-1)*(L-1)-1  #The -1 is because python counts from 0
@@ -24,8 +30,6 @@ def get_observable_flips(data_qubit_samples,L0_inds):
     obs_flips = np.bitwise_xor.reduce(data_qubit_samples.data[:, L0_inds], axis=1)
 
     return obs_flips
-
-
 
 def get_anc_indices_for_bd_edges(L: int):
     '''Get the indices that correspond to ancilla that check boundary data qubits.
@@ -48,7 +52,13 @@ def get_anc_indices_for_bd_edges(L: int):
 def get_nearest_anc_indices(L: int ,Option):
     '''Return the nearest indices of any ancilla index.
     
-    
+    Input:
+        L: distance of unrotated surface code
+        Option: "all" or "bd_only". For "bd_only" we get the neighbors of ancilla checking boundary qubits, whereas for "all"
+                we get all neighbors of all ancillas
+    Output:
+        nearest_anc: dictionary with keys the name of ancillas (ints) and values the neighboring ancillas
+
     '''
     
     num_ancilla = L*(L-1)
@@ -89,32 +99,22 @@ def get_nearest_anc_indices(L: int ,Option):
     return nearest_anc
 
 def nearest_anc_inds_to_unique_pairs(distance: int, Option):
+    '''Get adjacent ancilla pairs. These pairs define a qubit edge.
 
-    '''These are all the bulk connections (ancillas defining a qubit edge).'''
+    Input:
+        distance: distance of unrotated surface code
+        Option: "bd_only" to get only pairs for boundary ancilla, or "all" to get pairs for all ancilla
+    Output:
+        pairs: list of the form (indx1,indx2) of ancilla pairs
+
+    '''
 
     anc_neighbors=get_nearest_anc_indices(distance,Option)
-
-    # pairs = []
-    # for key in anc_neighbors.keys():
-
-    #     v1 = key
-    #     other = anc_neighbors[key]
-
-    #     for l in range(len(other)):
-        
-    #         min_v = min([v1,other[l]])
-    #         max_v = max([v1,other[l]])
-
-    #         sorted_pair = (min_v,max_v)
-    #         if sorted_pair not in pairs:
-
-    #             pairs.append(sorted_pair)
 
     pairs = set()
     for v1, neighbors in anc_neighbors.items():
         for v2 in neighbors:
             
-            # sorted_pair = tuple(sorted((v1, v2)))
             pairs.add((min(v1,v2),max(v1,v2)))
 
     pairs = list(pairs)    
@@ -123,48 +123,21 @@ def nearest_anc_inds_to_unique_pairs(distance: int, Option):
     return pairs
 
 def get_anc_pairs_that_form_L0(distance: int, num_rounds: int):
-    '''
+    '''Get edge indices of qubits which define the logical observable. The edge index is of the form (indx1,indx2)
+       where indx1 is the index of ancilla 1 and indx2 is the index of ancilla 2.
+
+       Input:
+            distance: distance of unrotated surface code
+            num_rounds: # of QEC rounds
+       Output:
+            anc_pairs_for_L0: list of tuples of the form (indx1,indx2)
     
-      
-        Get the edge indices of the logical observable, where the edge is formed by the names of the
-    detectors. Also, the inds are shifted by the num_rounds. The number of rounds is +1 from the actual
-    QEC rounds, because it also includes the projection.'''
+    '''
     
     num_rounds       = num_rounds-1
     L                = distance   
     num_ancilla      = L*(L-1)
-    # anc_pairs_for_L0 = []
 
-    # for k in range(L):
-
-    #     anc_pairs_for_L0.append((k,k+L))
-    
-    # if num_rounds>=1:
-    
-    #     cnt       = 0
-    #     old_batch = anc_pairs_for_L0.copy()
-        
-    #     while True:
-
-    #         new_batch = []
-    #         for l in range(len(old_batch)):
-                
-    #             anc0 = old_batch[l][0]
-    #             anc1 = old_batch[l][1]
-
-
-    #             new_pair = (anc0+num_ancilla,  anc1+num_ancilla)            
-    #             new_batch.append(new_pair)
-    #             anc_pairs_for_L0.append(new_pair)
-
-    #         old_batch = new_batch.copy()
-
-    #         cnt+=1
-    #         if cnt==num_rounds:
-
-    #             break
-
-    # Initial batch
     anc_pairs_for_L0 = [(k, k + L) for k in range(L)]
 
     if num_rounds >= 1:
@@ -215,8 +188,6 @@ def first_diag_errors_DEM(distance: int, num_rounds: int):
 
     return detector_pairs, rd_and_anc_pairs
 
-
-
 def second_diag_errors_DEM(distance: int, num_rounds: int):
     '''
     Get rd,anc indices of one set of diagonal errors of the surface code detector error model.
@@ -253,7 +224,6 @@ def second_diag_errors_DEM(distance: int, num_rounds: int):
 
 
     return detector_pairs,rd_and_anc_pairs
-
 
 def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, defects_matrix,vi_mean) -> dict:
     '''
@@ -303,7 +273,6 @@ def estimate_time_edge_probs(num_rounds:int, num_ancilla:int, defects_matrix,vi_
         
 
     return pij_time
-
 
 def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: int, 
                                              defects_matrix, pij_time: dict,vi_mean):
@@ -544,7 +513,5 @@ def estimate_bulk_and_bd_edge_probs(num_rounds:int, num_ancilla:int, distance: i
 
 
     return pij_bulk,pij_bd
-
-
 
 
