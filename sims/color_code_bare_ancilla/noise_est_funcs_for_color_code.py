@@ -92,13 +92,10 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type, obj, num_rounds: in
                         pij_bulk[tuple([det1,det2])] = (p-p3[key])/(1-2*p3[key])
 
 
-    #Bulk
     for key in pij_bulk.keys():
         if pij_bulk[key]<0:
             pij_bulk[key]=0
-    
 
-    #Time
     for key in pij_time.keys():
         if pij_time[key]<0:
             pij_time[key]=0
@@ -106,7 +103,6 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type, obj, num_rounds: in
 
     pij_bd = {}
     #Finally, get the boundary edges:
-
     
     for q in range(len(all_keys)):
     
@@ -125,8 +121,6 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type, obj, num_rounds: in
         
         pij_bd[det1] = 1/2 + (v1-1/2)/DENOM
 
-    # Boundary:
-    
     for key in pij_bd.keys():
         if pij_bd[key]<=0:
             pij_bd[key]=0
