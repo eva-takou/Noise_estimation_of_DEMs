@@ -4,27 +4,28 @@ from utilities.general_utils import *
 
 
 def get_all_det_nodes(obj):
-    '''Returns all the detector nodes of the circuit. For rd>1 it includes both detectors of Z and X checks.'''
+    '''Return all detector node names of the color code circuit.
+
+    Input:
+        obj: the color code object
+    Output:
+        det_nodes: list of detector node names of the form "Dj" 
+        '''
     all_nodes   = collect_color_of_nodes(obj)
     det_nodes = all_nodes['r']+all_nodes['g']+all_nodes['b']
-    #now order them
-    inds=[]
-    for node in det_nodes:
-        inds.append(int(node[1:]))
     
-    inds = np.sort(inds)
-    det_nodes=[]
-    for ind in inds:
-        det_nodes.append("D"+str(ind))
+    inds      = [int(node[1:]) for node in det_nodes]    
+    inds      = np.sort(inds)
+    det_nodes = [f"D{ind}" for ind in inds]
 
     return det_nodes 
 
-def get_Z_X_det_nodes(obj,num_rounds):
-    '''
+def get_Z_X_det_nodes(obj, num_rounds: int):
+    '''Get the detector node of the Z and X dems.
+
     Input:
         obj: the color code object
         num_rounds: the total # of QEC rounds (int)
-        num_ancilla: total # of ancilla qubits (i.e., both Z and X type) (int)
     Output:
         Z_det_nodes: list of names of Z-type detectors
         Z_det_nodes: list of names of X-type detectors'''
@@ -66,15 +67,17 @@ def get_Z_X_det_nodes(obj,num_rounds):
                
     return Z_det_nodes,X_det_nodes
 
-def get_Z_X_det_nodes_as_rd_anc_pairs(obj,num_rounds):
-    '''
+def get_Z_X_det_nodes_as_rd_anc_pairs(obj, num_rounds: int):
+    '''Get the (rd,anc) pair for each detector that exists in the X- or Z-DEM.
+    
     Input:
         obj: the color code object
         num_rounds: the total # of QEC rounds (int)
         
     Output:
         Z_det_nodes: list of tuples (rd,anc) which are names of Z-type detectors
-        Z_det_nodes: list of tuples (rd,anc) which are names of X-type detectors'''
+        Z_det_nodes: list of tuples (rd,anc) which are names of X-type detectors
+        '''
 
     num_ancilla = len(obj.qubit_groups['anc'])
 
@@ -95,8 +98,16 @@ def get_Z_X_det_nodes_as_rd_anc_pairs(obj,num_rounds):
 
     return Z_det_nodes,X_det_nodes
 
-def get_Z_X_det_nodes_as_rd_anc_pairs_dict(obj,num_rounds):
-
+def get_Z_X_det_nodes_as_rd_anc_pairs_dict(obj, num_rounds: int):
+    '''Get the (rd,anc) pair for each detector that exists in the X- or Z-DEM, in dictionary format.
+    
+    Input:
+        obj: the color code object
+        num_rounds: the total # of QEC rounds (int)
+    Output:
+        Z_dets_dict: dictionary with keys the detector names "Dj" and values the (rd,anc) corresponding to each detector in the Z-DEM
+        X_dets_dict: dictionary with keys the detector names "Dj" and values the (rd,anc) corresponding to each detector in the X-DEM
+        '''
     Z_dets,X_dets = get_Z_X_det_nodes_as_rd_anc_pairs(obj,num_rounds)
 
     Z_det_names,X_det_names = get_Z_X_det_nodes(obj,num_rounds)
@@ -120,8 +131,13 @@ def get_Z_X_det_nodes_as_rd_anc_pairs_dict(obj,num_rounds):
     return Z_dets_dict,X_dets_dict
 
 def collect_color_of_nodes(obj):
-    '''These are all the detector ids. For rd=1 we have only Z-type ancilla.
-    For rd>1 we have both Z and X type ancilla.'''
+    '''Get all the detectors of the color code object distinguished by their color.
+
+    Input:
+        obj: the color code object
+    Output:
+        nodes: dictionary with keys 'r', 'b', 'g' and values the "Dj" detectors corresponding to each color
+    '''
 
     nodes = {key: ["D" + str(val) for val in vals] for key, vals in obj.detector_ids.items()}
 
