@@ -1,62 +1,7 @@
-import stim
 import numpy as np
 from noise_est_funcs_for_color_code import *
-from math import prod
 from utilities.general_utils import *
 
-#The functions are applied for d>=5 color code.
-
-#DO I NEED THIS?
-def get_single_pnt_events_w_L0(defects_matrix,obj,obs_flips,defects_type,num_rounds):
-    '''This is simply counting unconditionally counts to see how many times Dj + L0 fire.'''
-    
-    num_shots   = np.shape(defects_matrix)[0]
-    num_ancilla = len(obj.qubit_groups['anc'])
-    
-    dets_Z,dets_X=get_Z_X_det_nodes_as_rd_anc_pairs_dict(obj,num_rounds)
-
-    if defects_type=="Z":
-        dets = dets_Z
-        num_ancilla = np.shape(defects_matrix)[2]
-    elif defects_type=="X":
-        dets = dets_X 
-        num_ancilla = np.shape(defects_matrix)[2]
-        
-    else:
-        raise Exception("defects_type can be only Z or X.")
-
-
-     
-    single_cnts  = {}
-    for k in range(num_shots):
-
-        locs = np.nonzero(defects_matrix.data[k,:,:])
-
-        if len(locs[0])==1 and len(locs[1])==1 and obs_flips[k]==True:
-
-            rd   = locs[0][0]
-            anc  = locs[1][0]
-            
-            if defects_type=="Z":
-
-                # indx  = anc + num_ancilla * rd
-                # names = list(dets_Z.keys())
-                # name  = names[indx]
-                name = [x for x in dets.keys() if dets[x]==(rd,anc)]
-                name = name[0]
-            else: #X type
-                
-                indx  = anc + num_ancilla * rd
-                names = list(dets_X.keys())
-                name  = names[indx]
-
-            if name in single_cnts.keys():
-                single_cnts[name]=single_cnts[name]+1/num_shots
-            else:
-                single_cnts[name]=1/num_shots
-
-
-    return single_cnts
 
 def get_all_det_nodes(obj):
     '''Returns all the detector nodes of the circuit. For rd>1 it includes both detectors of Z and X checks.'''
