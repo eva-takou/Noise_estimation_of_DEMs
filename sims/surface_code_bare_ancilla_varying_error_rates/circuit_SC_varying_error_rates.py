@@ -3,16 +3,17 @@ from sims.surface_code_bare_ancilla.surface_code_lattice import *
 import numpy as np
 from utilities.circuit_control import *
 
-#TODO: Make this more readable, cleanup, 
 
 def construct_Z_type_check_coordinates_for_planar_SC(data_edge, HZ):
-    '''
-    The Z-type stabilizers in this surface code construction are loops.
-    We start from the inner loops, and then move to the loops that touch the boundaries.
-    '''
+    '''Contruct the ancilla qubit coordinates for Z-type checks.
 
-    #HZ = surface_code_loop_stabs(L) #In each row, we have which qubit participates. So we want to put the detector coordinate 
-                                    #in the middle of the loop.
+    Input:
+        data_edge: list with elements of the form [indx_of_anc1,indx_of_anc2] which label the data qubit edges
+        HZ: parity check matrix for Z-type stabilizers (loops)
+
+    Output:
+        check_coords: coordinates of Z-type stabilizers
+        '''
 
     num_rows         = np.shape(HZ)[0]
     qubits_per_check = []
@@ -21,10 +22,12 @@ def construct_Z_type_check_coordinates_for_planar_SC(data_edge, HZ):
         temp = np.nonzero(HZ[k,:])[1]
         qubits_per_check.append(temp)  
     
+    #data_edge,all_meas_nodes, meas_nodes, bd_nodes = surface_code_planar(L)
+   
     check_coords=[]
     for check_qubits in qubits_per_check:
         
-        coords = []
+        coords= []
         for k in check_qubits:
            
             coords.append(data_edge[k])
@@ -49,21 +52,37 @@ def construct_Z_type_check_coordinates_for_planar_SC(data_edge, HZ):
 
     return check_coords
 
+def construct_repeating_block(X_stab_Check, num_ancilla, num_rounds: int, Reset: bool, include_both: bool): 
+    """Construct the repeating block for the X-memory surface code
+    
+    Input:
+        X_stab_Check: circuit that checks the X-stabilizers
+        num_ancilla: # of X-ancilla qubits
+        num_rounds: # of QEC rounds
+        Reset: True or False to reset the qubits
+        include_both: True or False for whether we include in the circuit both Z-type and X-type checks
+    Output:
+        repeating_block: circuit block to be repeated
 
+    """
+    
+    if Reset==True: 
+        #prefactor       = 2  #THIS IS CORRECT WHEN WE HAVE ONLY 1 TYPE OF CHECKS
+        if include_both==True:
+            prefactor = 3
+        elif include_both==False:
+            prefactor = 2
 
+        new_num_rounds  = num_rounds-1
+    else:
+        
+        #prefactor      = 3 #THIS IS CORRECT WHEN WE HAVE ONLY 1 TYPE OF CHECKS
 
-def construct_repeating_block(X_stab_Check, num_ancilla, num_rounds: int, include_both: bool):
-    #This is fine if we set all detectors (both on X and Z stabs)
-
-
-    #prefactor       = 2  #THIS IS CORRECT WHEN WE HAVE ONLY 1 TYPE OF CHECKS
-    if include_both==True:
-        prefactor = 3
-    elif include_both==False:
-        prefactor = 2
-
-    new_num_rounds  = num_rounds-1
-
+        if include_both==True:
+            prefactor = 5
+        elif include_both==False:
+            prefactor = 3 
+        new_num_rounds = num_rounds-2
 
     str_round = get_str(X_stab_Check)
 
@@ -96,6 +115,7 @@ def construct_repeating_block(X_stab_Check, num_ancilla, num_rounds: int, includ
                         if cnt_L == num_ancilla: #restart
                             cnt=-1
 
+                        
                         str_round = str_round[:m+1] + " rec[" + str(num_det) + "]"  + str_round[m+1:]
                         kstart    =  m + len(" rec[") + len(str(num_det)) + len("]")
                         cnt      +=1
@@ -114,8 +134,17 @@ def construct_repeating_block(X_stab_Check, num_ancilla, num_rounds: int, includ
 
 
 
-def find_qubits_per_X_stab_meas(L,include_both=True):
 
+def find_qubits_per_X_stab_meas(L,include_both=True):
+    '''Get stim target registers for the detectors of the last round.
+
+    Input:
+        L: distance
+        include_both: True if the circuit includes both X and Z ancilla measurements, otherwise False
+    Output:
+        past_indices: list of stim target registers that correspond to the last data qubit measurements xored with the value of the detector measuring the same stabilizer in the most recent round
+    
+    '''
     data_qubits = np.arange(1,L**2+(L-1)**2 +1).astype(int)
     n_data      = len(data_qubits)
     
@@ -128,55 +157,34 @@ def find_qubits_per_X_stab_meas(L,include_both=True):
 
         locs         = np.nonzero(HX[k,:])[1]
         locs         = locs + 1
-        temp_indices = []
+        temp_indices = [stim.target_rec(-n_data+loc-1) for loc in locs]
         
-        for loc in locs:
-
-            temp_indices.append(stim.target_rec(-n_data+loc-1))
         if include_both:
             temp_indices.append(stim.target_rec(-n_data - 2*n_anc  +k))    #This is the previous detector by 1 rd
         else:
             temp_indices.append(stim.target_rec(-n_data - n_anc  +k)) #This is the previous detector by 1 rd
-        #temp_indices.append(stim.target_rec(-n_data - 2*n_anc  +k)) #This is the previous detector by 2 rd
-
+        
         past_indices.append(temp_indices)
         
-
-        
-    return past_indices
-
-#Need to shift sth here
-def find_qubits_per_Z_stab_meas(L):
-
-    data_qubits = np.arange(1,L**2+(L-1)**2 +1).astype(int)
-    n_data      = len(data_qubits)
-    
-    HZ           = surface_code_loop_stabs(L)
-    n_anc        = np.shape(HZ)[0]
-    past_indices = []
-
-    for k in range(n_anc):
-
-        locs         = np.nonzero(HZ[k,:])[1]
-        locs         = locs + 1
-        temp_indices = []
-        
-        for loc in locs:
-
-            temp_indices.append(stim.target_rec(-n_data+loc-1))
-        
-        temp_indices.append(stim.target_rec(-n_data - n_anc  +k))    #This is the previous detector by 1 rd
-        #temp_indices.append(stim.target_rec(-n_data - 2*n_anc  +k)) #This is the previous detector by 2 rd
-
-        past_indices.append(temp_indices)
-        
-
     return past_indices
 
 
 
-def assign_coordinates(circuit, data_edge, meas_nodes, HZ, anc_type: str):
+def assign_coordinates(circuit: stim.Circuit, data_edge: list, meas_nodes: list, HZ, anc_type: str):
+    '''Assign qubit coordinates to the circuit.
     
+    Input:
+        circuit: the stim circuit
+        data_edge: list of data edge names of the form [indx_of_anc1,indx_of_anc2]
+        meas_nodes: coordinates of measurement nodes
+        HZ: parity check matrix for the Z-type stabilizers
+        anc_type: "Z" or "X" for which coordinates we want to obtain
+    Output:
+        circuit: the updated stim circuit
+        data_qubit_coords: coordinates of data qubits
+        anc_coords_Z:  coordinates of Z-ancilla qubits
+
+    '''
     data_qubit_coords = []
     anc_coords_X      = []
     cnt               = 1
@@ -255,9 +263,19 @@ def input_depol_channel(qubits,p_depol_input):
 
 
 def X_stab_Check_surface_code(HX, anc_qubits, anc_coords,all_two_qubit_depol_rates):
-    '''Construct the circuit for the X-checks in a planar (unrotated) surface code. The X-checks form star stabilizers.
-    An X-check is performed by applying Hadamard on the ancilla, then perform CNOTs with control the ancilla and targets
-    the qubits it checks, and then Hadamard again on the ancilla and measurement in the computational basis.
+    '''X-stabilizer preparation and measurements for the unrotated surface code.
+
+    Input:
+        HX: parity check matrix for X-stabilizers
+        anc_qubits: list of ancilla qubit names
+        anc_cords: coordinates of ancilla qubits
+        p_depol_after: depolarizing error rate after the CNOT gates
+        depol_type_after_gates: "DEPOLARIZE1" or "DEPOLARIZE2" 
+        Reset: True or False to reset the ancilla
+
+    Output:
+        X_stab_Check: stim circuit of X-stabilizer measurements
+    
     '''
 
     n_anc        = np.shape(HX)[0]
@@ -299,8 +317,7 @@ def X_stab_Check_surface_code(HX, anc_qubits, anc_coords,all_two_qubit_depol_rat
     return X_stab_Check
 
 
-
-def sample_from_lognorm(p,std):
+def sample_from_lognorm(p: float, std: float):
     
     error_prob = np.random.lognormal(mean=p,sigma=std)
     error_prob = np.log(error_prob)
@@ -341,9 +358,23 @@ def sample_from_lognorm_two_qubit_depol(p,std,num_CNOT_gates):
 
     return probs
 
-def planar_surface_code_circuit_X_memory(L: int, num_rounds: int, p_depol_input: float, p_depol_anc:float, std: float, p_depol_gate:float):
-    #For X-memory, if we check the X-stabs, we need to use the Z-logical operator and not the X-logical operator 
-    #as an observable (this is because it is conjugated by Hadamards). 
+def planar_surface_code_circuit_X_memory(L: int, num_rounds: int, p_depol_data: float, p_depol_anc:float, std: float, p_depol_gate:float):
+    '''Construct the X-memory unrotated surface code circuit, but with error rates that vary across qubits or gates.
+    The error rates are sampled from the log-normal distribution.
+    
+    Input:
+        L: distance (int)
+        num_rounds: # of QEC rounds (int)
+        p_depol_data: input single-qubit depolarizing mean rate for data qubits (float)
+        p_depol_anc: input single-qubit depolarizing mean rate for ancilla qubits (float)
+        Reset: True or False to reset the ancilla qubits after measurements
+        std: standard deviation for the log-normal distribution
+        p_depol_after: mean depolarizing rate after 2-qubit gates with variation determined by std (float)
+        depol_type_after_gates: "DEPOLARIZE1" or "DEPOLARIZE2" for the error after the CNOT gates
+    Output:
+        circuit: the stim circuit
+        '''
+
     #The surface code structure is created as follows (example for d=3):
     #         A3   Q7   A6
     #Q10 ------x--------x-------- Q13
@@ -368,22 +399,14 @@ def planar_surface_code_circuit_X_memory(L: int, num_rounds: int, p_depol_input:
     #Q8 -------x--------x--------- Q11
     #              Q5     
 
-    #Edges are the data qubits. "x"'s are the X-type (star) checks that check for Z-type errors.
-    #"o"'s are the z-type checks.
-    #The data qubit coordinate enumerations starts with the vertical edges, and then we move to the inner horizontal edges, and finally to the outer horizontal edges
-    #The ancilla qubit enumeration for star checks starts from the bottom left, and then we move along the vertical direction, and then we finaly move to the next column to 
-    #continue the enumeration (starting from bottom and going to the top).
-    #The ancilla qubit enumeration for loop checks starts from the middle blocks moves to the right, once we consider all weight-4 stabs.
-    #Then we move to the left boundary and finally to the right boundary.
-
     circuit           = stim.Circuit()
     
     HX                = surface_code_star_stabs(L)   #Checks the X-parity of the qubits (detect Z-type errors)
     HZ                = surface_code_loop_stabs(L)   #Checks the Z-parity of the qubits (detect X-type errors)
-    XL                = surface_code_z_logical(L)    #Z-Logical operator
+    XL                = surface_code_x_logical(L)    #X-Logical operator
     
     n_anc             = np.shape(HX)[0]  #Number of X-type ancilla qubits
-    n_data            = np.shape(HX)[1]  #Numner of data qubits  
+    n_data            = np.shape(HX)[1]  #Number of data qubits  
 
     data_qubits       = np.arange(1 , n_data + 1).astype(int)                             #1 till L^2+(L-1)^2
     X_anc_qubits      = np.arange(n_data + 1 , n_anc + (n_data+1)).astype(int)            #X-ancilla qubits
@@ -400,7 +423,7 @@ def planar_surface_code_circuit_X_memory(L: int, num_rounds: int, p_depol_input:
 
     depol_channel = stim.Circuit()
 
-    probs_dataQ = sample_from_lognorm_data_q(p_depol_input,std,len(data_qubits))
+    probs_dataQ = sample_from_lognorm_data_q(p_depol_data,std,len(data_qubits))
     cnt         = 0
     for qubit in data_qubits:
 
