@@ -2,6 +2,20 @@ import numpy as np
 from noise_est_funcs_for_color_code import *
 from utilities.general_utils import *
 
+def get_observable_flips(data_qubit_samples, distance: int):
+    '''Find whether the logical observable is flipped in each experiment.
+
+    Input:
+        data_qubit_samples: an array of the data qubit measurements (last QEC round) of dims # of shots x # of data qubits
+        distance:           distance of the color code
+    Output:
+        obs_flips: an array of True or False (True: flipped, False: not flipped) of length # of shots
+    '''
+    
+    restricted_data = data_qubit_samples.data[:,:distance]
+    obs_flips       = np.logical_xor.reduce(restricted_data, axis=1)
+
+    return obs_flips
 
 def get_all_det_nodes(obj):
     '''Return all detector node names of the color code circuit.
