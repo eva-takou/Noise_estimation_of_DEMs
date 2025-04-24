@@ -133,8 +133,6 @@ def construct_repeating_block(X_stab_Check, num_ancilla, num_rounds: int, Reset:
     return repeating_block
 
 
-
-
 def find_qubits_per_X_stab_meas(L,include_both=True):
     '''Get stim target registers for the detectors of the last round.
 
