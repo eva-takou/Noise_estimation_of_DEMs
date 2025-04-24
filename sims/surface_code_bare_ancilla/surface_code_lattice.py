@@ -191,7 +191,6 @@ def surface_code_z_stabs(L: int):
             
             edge_cnt=0
             for edge in data_edge:
-                #print("edge:",edge,"v:",v,"w:",w)
                 
                 v1 = tuple(edge[0])
                 w1 = tuple(edge[1])
@@ -200,8 +199,6 @@ def surface_code_z_stabs(L: int):
              
                 edge_cnt=edge_cnt+1
 
-        #print(HX[cnt])
-        #print("cycle:",cycle)
         cnt=cnt+1
 
     
