@@ -228,10 +228,10 @@ def form_particular_eq_for_one_truncation_order(target_inds: list, order: int):
 
        Input:
             target_inds: list that contains only indices from the elements [0,1,2,3] which correspond to x0,x1,x2,x3 for the configuration probability P(x0,x1,x2,x3)
-            order: maximum truncation order that we keep in the equations (int)
+            order: how many physical errors combine to give rise to the detection pattern  (int)
 
         Output:
-            all_eqns: symbolic equation for the configuration probability P(x0,x1,x2,x3) where target_inds indicate which detectors fire, and up to a maximum truncation order
+            all_eqns: symbolic equation for the configuration probability P(x0,x1,x2,x3) where target_inds indicate which detectors fire, for the given order
     '''
 
     all_terms   = form_equation_terms(target_inds, order)
