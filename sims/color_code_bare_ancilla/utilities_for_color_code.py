@@ -27,8 +27,8 @@ def get_Z_X_det_nodes(obj, num_rounds: int):
         obj: the color code object
         num_rounds: the total # of QEC rounds (int)
     Output:
-        Z_det_nodes: list of names of Z-type detectors
-        Z_det_nodes: list of names of X-type detectors'''
+        Z_det_nodes: set of names of Z-type detectors
+        Z_det_nodes: set of names of X-type detectors'''
 
     num_ancilla   = len(obj.qubit_groups['anc'])
     det_nodes     = get_all_det_nodes(obj)
@@ -123,7 +123,7 @@ def get_Z_X_det_nodes_as_rd_anc_pairs_dict(obj, num_rounds: int):
         Z_dets_dict[name]=rd_anc_pair
 
     for k in range(len(X_det_names)):
-        name = X_det_names[k]
+        name        = X_det_names[k]
         rd_anc_pair = X_dets[k]
 
         X_dets_dict[name]=rd_anc_pair
