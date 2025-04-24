@@ -260,18 +260,22 @@ def input_depol_channel(qubits,p_depol_input):
 
 
 def X_stab_Check_surface_code(HX, anc_qubits, anc_coords, p_depol_after, depol_type_after_gates, Reset):
-    '''Construct the circuit for the X-checks in a planar (unrotated) surface code. The X-checks form star stabilizers.
-    An X-check is performed by applying Hadamard on the ancilla, then perform CNOTs with control the ancilla and targets
-    the qubits it checks, and then Hadamard again on the ancilla and measurement in the computational basis.
+    '''X-stabilizer preparation and measurements for the unrotated surface code.
+
+    Input:
+        HX: parity check matrix for X-stabilizers
+        anc_qubits: list of ancilla qubit names
+        anc_cords: coordinates of ancilla qubits
+        p_depol_after: depolarizing error rate after the CNOT gates
+        depol_type_after_gates: "DEPOLARIZE1" or "DEPOLARIZE2" 
+        Reset: True or False to reset the ancilla
+
+    Output:
+        X_stab_Check: stim circuit of X-stabilizer measurements
+    
     '''
-    #HX           = surface_code_star_stabs(L) #X-type checks, check for Z type errors
     n_anc        = np.shape(HX)[0]
     X_stab_Check = stim.Circuit()
-
-    #Input depolarizing error rate
-    #X_stab_Check.append("DEPOLARIZE1",data_qubits,p_depol_input)
-    #X_stab_Check.append("DEPOLARIZE1",anc_qubits,p_depol_anc)
-    #X_stab_Check.append("TICK",[])
 
     if Reset==True:
         str_M = "MR"
@@ -292,10 +296,8 @@ def X_stab_Check_surface_code(HX, anc_qubits, anc_coords, p_depol_after, depol_t
 
             X_stab_Check.append("CX",[k,Q])
             X_stab_Check.append(depol_type_after_gates,[k,Q],p_depol_after)
-            # X_stab_Check.append("DEPOLARIZE1",Q,p_depol_after)
             
         X_stab_Check.append("H",k)    
-        #X_stab_Check.append(str_M,k)
         X_stab_Check.append("TICK",[])
         
         cnt+=1
