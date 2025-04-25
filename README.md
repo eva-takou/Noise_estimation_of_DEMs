@@ -1,6 +1,6 @@
 # Estimating noise of detector error models
 
-The code developed reproduces the results of the paper "Estimating decoding graphs and hypergraphs of memory QEC experiments" by Evangelia Takou and Kenneth R. Brown. It is used to estimate Pauli noise on decoding graphs or hypergraphs such as:
+The code developed here reproduces the results of the paper "Estimating decoding graphs and hypergraphs of memory QEC experiments" by Evangelia Takou and Kenneth R. Brown. It is used to estimate Pauli noise on decoding graphs or hypergraphs such as:
 
 - Repetition code with bare-ancilla syndrome extraction (graph)
 - Unrotated surface code with bare-ancilla syndrome extraction (graph)
