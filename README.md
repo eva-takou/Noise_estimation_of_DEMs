@@ -1,1 +1,1 @@
-# Noise_estimation_of_DEMs
+# Noise estimation of detector error models
