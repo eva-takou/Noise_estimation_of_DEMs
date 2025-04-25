@@ -951,6 +951,8 @@ class ColorCode:
         #     key])
         #     pauli_decomposed_probs.append(pauli_decomposed_probs_dict[key])
 
+        
+
         if benchmarking:
             print(time.time() - t0)
             t0 = time.time()
