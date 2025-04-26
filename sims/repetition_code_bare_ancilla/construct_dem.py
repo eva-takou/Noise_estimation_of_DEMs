@@ -2,7 +2,7 @@ import numpy as np
 import xarray as xr
 import stim
 from utilities.general_utils import *
-from estimation_funcs_rep_code import *
+from sims.repetition_code_bare_ancilla.estimation_funcs_rep_code import *
 from utilities.defects_matrix_utils import *
 
 
