@@ -1,8 +1,9 @@
 import stim
 from math import prod
 from utilities.general_utils import DEM_to_dictionary
-from sims.color_code_bare_ancilla.utilities_for_color_code import *
 from utilities.general_utils import bulk_prob_formula
+from utilities_for_color_code import *
+
 
 def estimate_all_edges_for_defect_type(sols_for_defect_type, obj, num_rounds: int, vi_mean, vivj_mean, stims_DEM: stim.DetectorErrorModel, defects_type):
     '''Estimate the edges and hyperedges for the X-, or Z-DEM.
@@ -22,8 +23,8 @@ def estimate_all_edges_for_defect_type(sols_for_defect_type, obj, num_rounds: in
         p3:       dictionary of 3-point probabilities
         '''
     
-    Z_dets,X_dets = get_Z_X_det_nodes_as_rd_anc_pairs_dict(obj,num_rounds)
-
+    Z_dets,X_dets=get_Z_X_det_nodes_as_rd_anc_pairs_dict(obj,num_rounds)
+    
     if defects_type=="X":
         dets = X_dets
     elif defects_type=="Z":
