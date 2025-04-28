@@ -26,5 +26,5 @@ In addition to basic python libraries, the code uses the following open-source p
 For any questions contact evangelia.takou@duke.edu.
 
 ## License
-This code is licensed under 
+This project is licensed under Apache 2.0 - see the [LICENSE](LICENSE) file for details.
 
