@@ -2,9 +2,8 @@ import numpy as np
 from itertools import combinations
 from sympy import symbols
 from scipy.optimize import minimize,least_squares
-from noise_est_funcs_for_color_code import *
 from utilities_for_color_code import *
-
+from sims.color_code_bare_ancilla.noise_est_funcs_for_color_code import *
 
 def get_3_pnt_events_Z_DEM(defects_matrix_Z, obj, Z_DEM: stim.DetectorErrorModel):
     '''Get the average number of 3-point coincidences of the 3-point
