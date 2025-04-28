@@ -19,7 +19,7 @@ For decoding hypergraphs, given that up to $m$ detectors fire simultaneously, we
 In addition to basic python libraries, the code uses the following open-source packages:
 - Stim: https://github.com/quantumlib/Stim/tree/main
 - Pymatching: https://github.com/oscarhiggott/PyMatching
-- Color code decoder developed in the paper [Color code decoder with improved scaling for correcting circuit-level noise](https://quantum-journal.org/papers/q-2025-01-27-1609/), whose code is available in https://github.com/seokhyung-lee/color-code-stim.
+- Color code decoder developed in the paper [Color code decoder with improved scaling for correcting circuit-level noise](https://quantum-journal.org/papers/q-2025-01-27-1609/), whose code is available in https://github.com/seokhyung-lee/color-code-stim. Note: this package requires Python version >= 3.11.
 
 ## Contact
 For any questions contact evangelia.takou@duke.edu.
