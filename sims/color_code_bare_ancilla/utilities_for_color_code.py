@@ -153,6 +153,7 @@ def collect_color_of_nodes(obj):
         nodes: dictionary with keys 'r', 'b', 'g' and values the "Dj" detectors corresponding to each color
     '''
 
-    nodes = {key: ["D" + str(val) for val in vals] for key, vals in obj.detector_ids.items()}
+    # nodes = {key: ["D" + str(val) for val in vals] for key, vals in obj.detector_ids.items()}
+    nodes = {key: ["D" + str(val) for val in vals] for key, vals in obj.detector_ids_by_color.items()}
 
     return nodes
