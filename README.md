@@ -25,6 +25,9 @@ In addition to basic python libraries, the code uses the following open-source p
 ## Contact
 For any questions contact evangelia.takou@duke.edu.
 
+## Using the code
+Make a local folder, move into your local folder from terminal, and type: git clone https://github.com/eva-tako/Noise_estimation_of_DEMs.git.
+
 ## License
 This project is licensed under Apache 2.0 - see the [LICENSE](LICENSE) file for details.
 
