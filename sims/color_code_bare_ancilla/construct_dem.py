@@ -1,7 +1,7 @@
 import stim
 import numpy as np
 from utilities.general_utils import DEM_to_dictionary
-from utilities_for_color_code import collect_color_of_nodes
+from sims.color_code_bare_ancilla.utilities_for_color_code import collect_color_of_nodes
 
 def decompose_org_DEM_into_ZX_DEMs(circuit: stim.Circuit, Z_dets: list, X_dets: list):
     '''Decompose stim's DEM into the Z and X part. Correlations present in Y errors are dropped.
