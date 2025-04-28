@@ -1,6 +1,6 @@
 import numpy as np
-from noise_est_funcs_for_color_code import *
 from utilities.general_utils import *
+from sims.color_code_bare_ancilla.noise_est_funcs_for_color_code import *
 
 def get_observable_flips(data_qubit_samples, distance: int):
     '''Find whether the logical observable is flipped in each experiment.
