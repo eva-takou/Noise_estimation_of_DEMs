@@ -11,7 +11,7 @@ setup(
     author='Evangelia Takou',
     author_email='evangelia.takou@duke.edu',
     license='Apache 2.0',
-    packages=['Noise_estimation_of_DEMs'],
+    #packages=['Noise_estimation_of_DEMs'],
     install_requires=['numpy'],
                       
                       )
