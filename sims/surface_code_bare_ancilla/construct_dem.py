@@ -124,7 +124,7 @@ def surface_code_DEM(pij_bulk: dict,pij_bd: dict,pij_time: dict, stims_DEM: stim
 
         if prob>0:
             det_indx = int(key[1:])
-            reconstructed_DEM.append("error",pij_bd[key], #
+            reconstructed_DEM.append("error",prob, #
                                 [stim.target_relative_detector_id(det_indx), ])
 
 
@@ -146,7 +146,7 @@ def surface_code_DEM(pij_bulk: dict,pij_bd: dict,pij_time: dict, stims_DEM: stim
 
             det_indx1 = int(d0[1:])
             det_indx2 = int(d1[1:])
-            reconstructed_DEM.append("error",pij_time[key], #
+            reconstructed_DEM.append("error",prob, #
                                 [stim.target_relative_detector_id(det_indx1),stim.target_relative_detector_id(det_indx2) ])        
 
 
