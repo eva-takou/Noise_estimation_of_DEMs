@@ -51,8 +51,9 @@ def get_initial_state(anc_qubits: list):
         initial_state: xArray of all zeros, with dimensions the ancilla qubit names
     '''
     
-    initial_state = np.zeros(len(anc_qubits), dtype=int)
-    initial_state = initial_state==True
+    # initial_state = np.zeros(len(anc_qubits), dtype=int)
+    initial_state = np.zeros(len(anc_qubits), dtype=np.uint8) 
+    # initial_state = initial_state==True
     initial_state = xr.DataArray ( data=initial_state,dims=[ "anc_qubit" ] ,coords=dict ( anc_qubit=anc_qubits) , ) 
     
     return initial_state
