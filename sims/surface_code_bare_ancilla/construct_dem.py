@@ -4,6 +4,51 @@ from sims.surface_code_bare_ancilla.surface_code_lattice import surface_code_sta
 import stim
 from utilities.defects_matrix_utils import *
 
+from numba import njit
+
+# def project_data_meas(data_qubit_samples, L: int, NUM_ROUNDS: int, NUM_SHOTS: int, ANC_QUBITS: list):
+#     '''Perform stabilizer reconstruction for the surface code, using the last data qubit measurements.
+
+#     Input: 
+#         data_qubit_samples: the measurement outcomes of data qubits (xArray of dimensions # of shots x # of data qubits)
+#         L: distance of surface code (int)
+#         NUM_ROUNDS: # of QEC rounds (int)
+#         NUM_SHOTS: # of shots we sample the stim circuit (int)
+#         ANC_QUBITS: ancilla qubit names (list)
+#     Output:
+#         syndrome_proj: syndrome projection onto stabilizers (xArray of dimensions # of shots x # of ancilla qubits)
+        
+#     '''
+#     shots    = np.arange(NUM_SHOTS)
+#     HX       = surface_code_star_stabs(L).todense()
+#     num_rows = np.shape(HX)[0]
+#     s_proj   = []
+    
+
+#     for k in range(num_rows):
+
+#         locs = np.nonzero(HX[k,:])[1] 
+#         temp = data_qubit_samples.data[:,locs[0]]
+        
+#         for m in range(1,len(locs)):
+            
+#             # if m==0:
+#             #     continue
+#             # else:
+#             temp = temp ^ data_qubit_samples.data[:,locs[m]]
+
+#         s_proj.append(temp)
+
+
+#     s_proj  = np.vstack(s_proj).T
+
+#     syndrome_proj = xr.DataArray(data=s_proj,
+#                 dims=["shot","anc_qubit"],
+#                 coords=dict(shot=shots,anc_qubit=ANC_QUBITS))
+#     syndrome_proj["qec_round"]  = NUM_ROUNDS
+
+#     return syndrome_proj
+
 
 def project_data_meas(data_qubit_samples, L: int, NUM_ROUNDS: int, NUM_SHOTS: int, ANC_QUBITS: list):
     '''Perform stabilizer reconstruction for the surface code, using the last data qubit measurements.
@@ -18,34 +63,34 @@ def project_data_meas(data_qubit_samples, L: int, NUM_ROUNDS: int, NUM_SHOTS: in
         syndrome_proj: syndrome projection onto stabilizers (xArray of dimensions # of shots x # of ancilla qubits)
         
     '''
-    shots    = np.arange(NUM_SHOTS)
+ 
     HX       = surface_code_star_stabs(L).todense()
-    num_rows = np.shape(HX)[0]
-    s_proj   = []
+    s_proj   = project_data_fast(data_qubit_samples.data.astype(np.uint8), HX.astype(np.uint8))
 
-    for k in range(num_rows):
-
-        locs = np.nonzero(HX[k,:])[1] 
-        temp = data_qubit_samples.data[:,locs[0]]
-        
-        for m in range(len(locs)):
-            
-            if m==0:
-                continue
-            else:
-                temp = temp ^ data_qubit_samples.data[:,locs[m]]
-
-        s_proj.append(temp)
-
-
-    s_proj  = np.vstack(s_proj).T
 
     syndrome_proj = xr.DataArray(data=s_proj,
                 dims=["shot","anc_qubit"],
-                coords=dict(shot=shots,anc_qubit=ANC_QUBITS))
+                coords=dict(shot=np.arange(NUM_SHOTS),anc_qubit=ANC_QUBITS))
     syndrome_proj["qec_round"]  = NUM_ROUNDS
 
     return syndrome_proj
+
+
+@njit
+def project_data_fast(data, HX):
+    num_shots = data.shape[0]
+    num_stabilizers = HX.shape[0]
+    s_proj = np.empty((num_shots, num_stabilizers), dtype=np.uint8)
+
+    for k in range(num_stabilizers):
+        # Get indices of qubits involved in stabilizer k
+        locs = np.nonzero(HX[k])[0]
+        temp = data[:, locs[0]].copy()
+        for m in range(1, len(locs)):
+            temp ^= data[:, locs[m]]
+        s_proj[:, k] = temp
+
+    return s_proj
 
 
 def get_defects(circuit: stim.Circuit, distance: int, num_shots: int, num_rounds: int):
@@ -65,10 +110,6 @@ def get_defects(circuit: stim.Circuit, distance: int, num_shots: int, num_rounds
     L             = distance
     all_qubits    = circuit.get_final_qubit_coordinates()
     qubit_indices = list(all_qubits.keys())
-    qubit_coords  = []
-
-    for k in qubit_indices:
-        qubit_coords.append(all_qubits[k])
 
     ANC_QUBITS  = np.arange(L**2+(L-1)**2+1,len(qubit_indices)+1)
     DATA_QUBITS = list( set(ANC_QUBITS) ^ set(qubit_indices) )
