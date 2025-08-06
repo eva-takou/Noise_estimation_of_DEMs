@@ -118,7 +118,8 @@ def get_defects(circuit: stim.Circuit, distance: int, num_shots: int, num_rounds
     initial_state = get_initial_state(ANC_QUBITS)
 
     sampler   = circuit.compile_sampler()
-    samples   = sampler.sample(shots=num_shots)
+    # samples   = sampler.sample(shots=num_shots)
+    samples   = sampler.sample(shots=num_shots).astype(np.uint8)
 
     anc_qubit_samples,data_qubit_samples = get_measurement_data(samples,DATA_QUBITS,ANC_QUBITS,num_rounds,num_shots)
 
