@@ -111,53 +111,89 @@ def surface_code_DEM(pij_bulk: dict,pij_bd: dict,pij_time: dict, stims_DEM: stim
     '''
     reconstructed_DEM = stim.DetectorErrorModel()
 
-    for key in pij_bd.keys():
+    # for key in pij_bd.keys():
 
-        det_indx = int(key[1:])
+    #     det_indx = int(key[1:])
 
-        if pij_bd[key]>0:
+    #     if pij_bd[key]>0:
 
+    #         reconstructed_DEM.append("error",pij_bd[key], #
+    #                             [stim.target_relative_detector_id(det_indx), ])
+
+    for key,prob in pij_bd.items():
+
+        if prob>0:
+            det_indx = int(key[1:])
             reconstructed_DEM.append("error",pij_bd[key], #
                                 [stim.target_relative_detector_id(det_indx), ])
 
-    for key in pij_time.keys():
 
-        d0,d1 = key
+    # for key in pij_time.keys():
 
-        det_indx1 = int(d0[1:])
-        det_indx2 = int(d1[1:])
+    #     d0,d1 = key
 
-        if pij_time[key]>0:
+    #     det_indx1 = int(d0[1:])
+    #     det_indx2 = int(d1[1:])
 
+    #     if pij_time[key]>0:
+
+    #         reconstructed_DEM.append("error",pij_time[key], #
+    #                             [stim.target_relative_detector_id(det_indx1),stim.target_relative_detector_id(det_indx2) ])        
+
+    for (d0,d1),prob in pij_time.items():
+
+        if prob>0:
+
+            det_indx1 = int(d0[1:])
+            det_indx2 = int(d1[1:])
             reconstructed_DEM.append("error",pij_time[key], #
                                 [stim.target_relative_detector_id(det_indx1),stim.target_relative_detector_id(det_indx2) ])        
 
-    for key in pij_bulk.keys():
 
-        d0 = key[0]
-        d1 = key[1]
-        det_indx1 = int(d0[1:])
-        det_indx2 = int(d1[1:])
-        logic = key[2]
 
-        if logic=='': #No error
+    # for key in pij_bulk.keys():
+
+    #     d0 = key[0]
+    #     d1 = key[1]
+    #     det_indx1 = int(d0[1:])
+    #     det_indx2 = int(d1[1:])
+    #     logic = key[2]
+
+    #     if logic=='': #No error
             
-            if pij_bulk[key]>0:
-                reconstructed_DEM.append("error",pij_bulk[key], #
-                                    [stim.target_relative_detector_id(det_indx1),stim.target_relative_detector_id(det_indx2) ])        
-        else:
+    #         if pij_bulk[key]>0:
+    #             reconstructed_DEM.append("error",pij_bulk[key], #
+    #                                 [stim.target_relative_detector_id(det_indx1),stim.target_relative_detector_id(det_indx2) ])        
+    #     else:
 
-            if pij_bulk[key]>0:
-                reconstructed_DEM.append("error",pij_bulk[key], #
-                                    [stim.target_relative_detector_id(det_indx1),stim.target_relative_detector_id(det_indx2),
-                                    stim.target_logical_observable_id(0)])        
-                
+    #         if pij_bulk[key]>0:
+    #             reconstructed_DEM.append("error",pij_bulk[key], #
+    #                                 [stim.target_relative_detector_id(det_indx1),stim.target_relative_detector_id(det_indx2),
+    #                                 stim.target_logical_observable_id(0)])        
+
+    for (d0,d1,logic), prob in pij_bulk.items():
+
+        if prob>0:
+            det_indx1 = int(d0[1:])
+            det_indx2 = int(d1[1:])
+            targets = [stim.target_relative_detector_id(det_indx1),stim.target_relative_detector_id(det_indx2) ]
+
+            if logic != '':
+                targets.append(stim.target_logical_observable_id(0))
+
+            reconstructed_DEM.append("error",prob,targets)
+
+     
+
     for instruction in stims_DEM:
 
-        if instruction.type=="error":
-            continue
-        else:   #detector annotations
+        if instruction.type != "error":
             reconstructed_DEM.append(instruction)
+
+        # if instruction.type=="error":
+        #     continue
+        # else:   #detector annotations
+        #     reconstructed_DEM.append(instruction)
 
 
     return reconstructed_DEM
